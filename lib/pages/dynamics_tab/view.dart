@@ -46,11 +46,8 @@ class _DynamicsTabPageState
 
   @override
   void listener() {
-    if (_mainController.navigationBars[0] != NavigationBarType.dynamics &&
-        _mainController.selectedIndex.value == 0) {
-      return;
-    }
-    super.listener();
+    // Since dynamics tab is removed, always skip this logic
+    return;
   }
 
   @override

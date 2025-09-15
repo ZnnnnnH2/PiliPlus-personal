@@ -31,48 +31,11 @@ class _HomePageState extends State<HomePage>
   Widget build(BuildContext context) {
     super.build(context);
     final theme = Theme.of(context);
-    return Column(
-      children: [
-        if (!_homeController.useSideBar &&
-            MediaQuery.sizeOf(context).isPortrait)
-          customAppBar(theme),
-        if (_homeController.tabs.length > 1)
-          Material(
-            color: theme.colorScheme.surface,
-            child: Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: SizedBox(
-                height: 42,
-                width: double.infinity,
-                child: TabBar(
-                  controller: _homeController.tabController,
-                  tabs: [
-                    for (var i in _homeController.tabs) Tab(text: i.label),
-                  ],
-                  isScrollable: true,
-                  dividerColor: Colors.transparent,
-                  dividerHeight: 0,
-                  splashBorderRadius: StyleString.mdRadius,
-                  tabAlignment: TabAlignment.center,
-                  onTap: (_) {
-                    feedBack();
-                    if (!_homeController.tabController.indexIsChanging) {
-                      _homeController.animateToTop();
-                    }
-                  },
-                ),
-              ),
-            ),
-          )
-        else
-          const SizedBox(height: 6),
-        Expanded(
-          child: tabBarView(
-            controller: _homeController.tabController,
-            children: _homeController.tabs.map((e) => e.page).toList(),
-          ),
-        ),
-      ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32.0),
+        child: searchBar(theme),
+      ),
     );
   }
 
@@ -176,46 +139,44 @@ class _HomePageState extends State<HomePage>
   }
 
   Widget searchBar(ThemeData theme) {
-    return Expanded(
-      child: SizedBox(
-        height: 44,
-        child: Material(
+    return SizedBox(
+      height: 44,
+      child: Material(
+        borderRadius: const BorderRadius.all(Radius.circular(25)),
+        color: theme.colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
+        child: InkWell(
           borderRadius: const BorderRadius.all(Radius.circular(25)),
-          color: theme.colorScheme.onSecondaryContainer.withValues(alpha: 0.05),
-          child: InkWell(
-            borderRadius: const BorderRadius.all(Radius.circular(25)),
-            splashColor: theme.colorScheme.primaryContainer.withValues(
-              alpha: 0.3,
-            ),
-            onTap: () => Get.toNamed(
-              '/search',
-              parameters: {
-                if (_homeController.enableSearchWord)
-                  'hintText': _homeController.defaultSearch.value,
-              },
-            ),
-            child: Row(
-              children: [
-                const SizedBox(width: 14),
-                Icon(
-                  Icons.search_outlined,
-                  color: theme.colorScheme.onSecondaryContainer,
-                  semanticLabel: '搜索',
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Obx(
-                    () => Text(
-                      _homeController.defaultSearch.value,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(color: theme.colorScheme.outline),
-                    ),
+          splashColor: theme.colorScheme.primaryContainer.withValues(
+            alpha: 0.3,
+          ),
+          onTap: () => Get.toNamed(
+            '/search',
+            parameters: {
+              if (_homeController.enableSearchWord)
+                'hintText': _homeController.defaultSearch.value,
+            },
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 14),
+              Icon(
+                Icons.search_outlined,
+                color: theme.colorScheme.onSecondaryContainer,
+                semanticLabel: '搜索',
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Obx(
+                  () => Text(
+                    _homeController.defaultSearch.value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(color: theme.colorScheme.outline),
                   ),
                 ),
-                const SizedBox(width: 5),
-              ],
-            ),
+              ),
+              const SizedBox(width: 5),
+            ],
           ),
         ),
       ),

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/ZnH2/Desktop/PiliPlus/**)",
+      "Read(//c/Users/ZnH2/Desktop/**)",
+      "Bash(cat:*)",
+      "Bash(find:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

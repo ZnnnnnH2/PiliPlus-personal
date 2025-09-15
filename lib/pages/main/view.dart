@@ -61,7 +61,6 @@ class _MainAppState extends State<MainApp>
   void didPopNext() {
     WidgetsBinding.instance.addObserver(this);
     _mainController
-      ..checkUnreadDynamic()
       ..checkDefaultSearch(true)
       ..checkUnread(useBottomNav);
     super.didPopNext();
@@ -77,7 +76,6 @@ class _MainAppState extends State<MainApp>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
       _mainController
-        ..checkUnreadDynamic()
         ..checkDefaultSearch(true)
         ..checkUnread(useBottomNav);
     }
@@ -380,22 +378,7 @@ class _MainAppState extends State<MainApp>
     bool selected = false,
   }) {
     final icon = selected ? type.selectIcon : type.icon;
-    return type == NavigationBarType.dynamics
-        ? Obx(
-            () {
-              final dynCount = _mainController.dynCount.value;
-              return Badge(
-                isLabelVisible: dynCount > 0,
-                label:
-                    _mainController.dynamicBadgeMode == DynamicBadgeMode.number
-                    ? Text(dynCount.toString())
-                    : null,
-                padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: icon,
-              );
-            },
-          )
-        : icon;
+    return icon;
   }
 
   Widget userAndSearchVertical(ThemeData theme) {

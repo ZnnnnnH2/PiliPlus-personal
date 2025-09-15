@@ -2,14 +2,12 @@ import 'dart:async';
 import 'dart:math' show max;
 
 import 'package:PiliPlus/common/widgets/view_safe_area.dart';
-import 'package:PiliPlus/grpc/dyn.dart';
 import 'package:PiliPlus/http/msg.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamic_badge_mode.dart';
 import 'package:PiliPlus/models/common/msg/msg_unread_type.dart';
 import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/models_new/msgfeed_unread/data.dart';
 import 'package:PiliPlus/models_new/single_unread/data.dart';
-import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/home/controller.dart';
 import 'package:PiliPlus/pages/mine/view.dart';
 import 'package:PiliPlus/services/account_service.dart';
@@ -34,15 +32,6 @@ class MainController extends GetxController
   late dynamic controller;
   RxInt selectedIndex = 0.obs;
 
-  RxInt dynCount = 0.obs;
-  late DynamicBadgeMode dynamicBadgeMode;
-  late bool checkDynamic = Pref.checkDynamic;
-  late int dynamicPeriod = Pref.dynamicPeriod * 60 * 1000;
-  late int _lastCheckDynamicAt = 0;
-  late bool hasDyn = false;
-  late final DynamicsController dynamicController = Get.put(
-    DynamicsController(),
-  );
 
   late bool hasHome = false;
   late final HomeController homeController = Get.put(HomeController());
@@ -51,6 +40,15 @@ class MainController extends GetxController
   late Set<MsgUnReadType> msgUnReadTypes = Pref.msgUnReadTypeV2;
   late final RxString msgUnReadCount = ''.obs;
   late int lastCheckUnreadAt = 0;
+
+  // Dynamic settings
+  bool checkDynamic = Pref.checkDynamic;
+  int dynamicPeriod = Pref.dynamicPeriod * 60 * 1000;
+
+  DynamicBadgeMode get dynamicBadgeMode => msgBadgeMode;
+  set dynamicBadgeMode(DynamicBadgeMode value) {
+    msgBadgeMode = value;
+  }
 
   final enableMYBar = Pref.enableMYBar;
   final useSideBar = Pref.useSideBar;
@@ -83,17 +81,7 @@ class MainController extends GetxController
     if (navigationBars.length > 1 && hideTabBar) {
       bottomBarStream = StreamController<bool>.broadcast();
     }
-    dynamicBadgeMode = DynamicBadgeMode.values[Pref.dynamicBadgeMode];
 
-    hasDyn = navigationBars.contains(NavigationBarType.dynamics);
-    if (dynamicBadgeMode != DynamicBadgeMode.hidden) {
-      if (hasDyn) {
-        if (checkDynamic) {
-          _lastCheckDynamicAt = DateTime.now().millisecondsSinceEpoch;
-        }
-        getUnreadDynamic();
-      }
-    }
 
     hasHome = navigationBars.contains(NavigationBarType.home);
     if (msgBadgeMode != DynamicBadgeMode.hidden) {
@@ -178,35 +166,6 @@ class MainController extends GetxController
     }
   }
 
-  void getUnreadDynamic() {
-    if (!accountService.isLogin.value || !hasDyn) {
-      return;
-    }
-    DynGrpc.dynRed().then((res) {
-      if (res != null) {
-        setDynCount(res);
-      }
-    });
-  }
-
-  void setDynCount([int count = 0]) {
-    if (!hasDyn) return;
-    dynCount.value = count;
-  }
-
-  void checkUnreadDynamic() {
-    if (!hasDyn ||
-        !accountService.isLogin.value ||
-        dynamicBadgeMode == DynamicBadgeMode.hidden ||
-        !checkDynamic) {
-      return;
-    }
-    int now = DateTime.now().millisecondsSinceEpoch;
-    if (now - _lastCheckDynamicAt >= dynamicPeriod) {
-      _lastCheckDynamicAt = now;
-      getUnreadDynamic();
-    }
-  }
 
   void setNavBarConfig() {
     List<int>? navBarSort =
@@ -289,8 +248,6 @@ class MainController extends GetxController
       if (currentNav == NavigationBarType.home) {
         checkDefaultSearch();
         checkUnread();
-      } else if (currentNav == NavigationBarType.dynamics) {
-        setDynCount();
       }
     } else {
       int now = DateTime.now().millisecondsSinceEpoch;
@@ -301,20 +258,20 @@ class MainController extends GetxController
           () {
             if (currentNav == NavigationBarType.home) {
               homeController.onRefresh();
-            } else if (currentNav == NavigationBarType.dynamics) {
-              dynamicController.onRefresh();
             }
           },
         );
       } else {
         if (currentNav == NavigationBarType.home) {
           homeController.toTopOrRefresh();
-        } else if (currentNav == NavigationBarType.dynamics) {
-          dynamicController.toTopOrRefresh();
         }
       }
       _lastSelectTime = now;
     }
+  }
+
+  void getUnreadDynamic([bool isChangeType = false]) {
+    queryUnreadMsg(isChangeType);
   }
 
   void setSearchBar() {
