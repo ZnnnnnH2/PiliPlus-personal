@@ -85,26 +85,11 @@ class _SearchPageState extends State<SearchPage> {
         children: [
           if (_searchController.searchSuggestion) _searchSuggest(),
           if (isPortrait) ...[
-            if (_searchController.enableTrending) hotSearch(theme, isPortrait),
             _history(theme, isPortrait),
-            if (_searchController.enableSearchRcmd)
-              hotSearch(theme, isPortrait, isTrending: false),
           ] else
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                if (_searchController.enableTrending ||
-                    _searchController.enableSearchRcmd)
-                  Expanded(
-                    child: Column(
-                      children: [
-                        if (_searchController.enableTrending)
-                          hotSearch(theme, isPortrait),
-                        if (_searchController.enableSearchRcmd)
-                          hotSearch(theme, isPortrait, isTrending: false),
-                      ],
-                    ),
-                  ),
                 Expanded(child: _history(theme, isPortrait)),
               ],
             ),
