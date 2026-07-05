@@ -4,7 +4,9 @@ import 'package:PiliPlus/utils/accounts.dart';
 import 'package:dio/dio.dart';
 
 class ValidateHttp {
-  static Future gaiaVgateRegister(String vVoucher) async {
+  static Future<Map<String, dynamic>> gaiaVgateRegister(
+    String vVoucher,
+  ) async {
     final res = await Request().post(
       Api.gaiaVgateRegister,
       queryParameters: {
@@ -24,11 +26,11 @@ class ValidateHttp {
     }
   }
 
-  static Future gaiaVgateValidate({
-    required challenge,
-    required seccode,
-    required token,
-    required validate,
+  static Future<Map<String, dynamic>> gaiaVgateValidate({
+    required String? challenge,
+    required String? seccode,
+    required String? token,
+    required String? validate,
   }) async {
     final res = await Request().post(
       Api.gaiaVgateValidate,

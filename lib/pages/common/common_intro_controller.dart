@@ -41,10 +41,23 @@ abstract class CommonIntroController extends GetxController {
   bool get hasTriple => hasLike.value && hasCoin && hasFav.value;
 
   bool isProcessing = false;
-  Future<void> handleAction(FutureOr Function() action) async {
-    if (!isProcessing) {
-      isProcessing = true;
+  bool _queryingOnlineTotal = false;
+
+  void _showResultError(Map<String, dynamic> result) {
+    final message = result['msg']?.toString();
+    if (message?.isNotEmpty == true) {
+      SmartDialog.showToast(message!);
+    }
+  }
+
+  Future<void> handleAction(FutureOr<void> Function() action) async {
+    if (isProcessing) {
+      return;
+    }
+    isProcessing = true;
+    try {
       await action();
+    } finally {
       isProcessing = false;
     }
   }
@@ -106,16 +119,21 @@ abstract class CommonIntroController extends GetxController {
 
   // 查看同时在看人数
   Future<void> queryOnlineTotal() async {
-    if (!isShowOnlineTotal) {
+    if (!isShowOnlineTotal || _queryingOnlineTotal) {
       return;
     }
-    var result = await VideoHttp.onlineTotal(
-      aid: IdUtils.bv2av(bvid),
-      bvid: bvid,
-      cid: cid.value,
-    );
-    if (result['status']) {
-      total.value = result['data'];
+    _queryingOnlineTotal = true;
+    try {
+      var result = await VideoHttp.onlineTotal(
+        aid: IdUtils.bv2av(bvid),
+        bvid: bvid,
+        cid: cid.value,
+      );
+      if (result['status']) {
+        total.value = result['data'];
+      }
+    } finally {
+      _queryingOnlineTotal = false;
     }
   }
 
@@ -148,27 +166,28 @@ abstract class CommonIntroController extends GetxController {
     // 收藏至默认文件夹
     if (isQuick) {
       SmartDialog.showLoading(msg: '请求中');
-      queryVideoInFolder().then((res) async {
-        if (res.isSuccess) {
-          final hasFav = this.hasFav.value;
-          var result = hasFav
-              ? await FavHttp.unfavAll(rid: rid, type: type)
-              : await FavHttp.favVideo(
-                  resources: '$rid:$type',
-                  addIds: favFolderId.toString(),
-                );
-          SmartDialog.dismiss();
-          if (result['status']) {
-            getStat()!.favorite += hasFav ? -1 : 1;
-            this.hasFav.value = !hasFav;
-            SmartDialog.showToast('✅ 快速收藏/取消收藏成功');
-          } else {
-            SmartDialog.showToast(result['msg']);
-          }
-        } else {
-          SmartDialog.dismiss();
+      try {
+        final folderResult = await queryVideoInFolder();
+        if (!folderResult.isSuccess) {
+          return;
         }
-      });
+        final hasFav = this.hasFav.value;
+        final result = hasFav
+            ? await FavHttp.unfavAll(rid: rid, type: type)
+            : await FavHttp.favVideo(
+                resources: '$rid:$type',
+                addIds: favFolderId.toString(),
+              );
+        if (result['status']) {
+          getStat()!.favorite += hasFav ? -1 : 1;
+          this.hasFav.value = !hasFav;
+          SmartDialog.showToast('✅ 快速收藏/取消收藏成功');
+        } else {
+          _showResultError(result);
+        }
+      } finally {
+        SmartDialog.dismiss();
+      }
       return;
     }
 
@@ -207,7 +226,7 @@ abstract class CommonIntroController extends GetxController {
       }
       SmartDialog.showToast('操作成功');
     } else {
-      SmartDialog.showToast(result['msg']);
+      _showResultError(result);
     }
   }
 
@@ -231,7 +250,7 @@ abstract class CommonIntroController extends GetxController {
         hasLike.value = true;
       }
     } else {
-      SmartDialog.showToast(res['msg']);
+      _showResultError(res);
     }
   }
 
@@ -284,7 +303,11 @@ abstract class CommonIntroController extends GetxController {
     var res = await (hasLater.value
         ? UserHttp.toViewDel(aids: IdUtils.bv2av(bvid).toString())
         : await UserHttp.toViewLater(bvid: bvid));
-    if (res['status']) hasLater.value = !hasLater.value;
-    SmartDialog.showToast(res['msg']);
+    if (res['status']) {
+      hasLater.value = !hasLater.value;
+      SmartDialog.showToast(res['msg']);
+      return;
+    }
+    _showResultError(res);
   }
 }

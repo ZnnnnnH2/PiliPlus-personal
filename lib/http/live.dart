@@ -3,6 +3,7 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/login.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/http/ua_type.dart';
 import 'package:PiliPlus/models/common/live_search_type.dart';
 import 'package:PiliPlus/models_new/live/live_area_list/area_item.dart';
@@ -25,7 +26,12 @@ import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
 
 class LiveHttp {
-  static Future sendLiveMsg({roomId, msg, dmType, emoticonOptions}) async {
+  static Future<Map<String, dynamic>> sendLiveMsg({
+    required int roomId,
+    required String msg,
+    int? dmType,
+    Map<String, dynamic>? emoticonOptions,
+  }) async {
     String csrf = Accounts.main.csrf;
     var res = await Request().post(
       Api.sendLiveMsg,
@@ -54,20 +60,14 @@ class LiveHttp {
         'csrf_token': csrf,
       }),
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data'],
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future liveRoomInfo({roomId, qn, bool onlyAudio = false}) async {
+  static Future<Map<String, dynamic>> liveRoomInfo({
+    required int roomId,
+    int? qn,
+    bool onlyAudio = false,
+  }) async {
     var res = await Request().get(
       Api.liveRoomInfo,
       queryParameters: {
@@ -83,34 +83,31 @@ class LiveHttp {
         if (onlyAudio) 'only_audio': 1,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': RoomPlayInfoData.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => RoomPlayInfoData.fromJson(data),
+    );
   }
 
-  static Future liveRoomInfoH5({roomId, qn}) async {
+  static Future<Map<String, dynamic>> liveRoomInfoH5({
+    required int roomId,
+    int? qn,
+  }) async {
     var res = await Request().get(
       Api.liveRoomInfoH5,
       queryParameters: {
         'room_id': roomId,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': RoomInfoH5Data.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => RoomInfoH5Data.fromJson(data),
+    );
   }
 
-  static Future liveRoomDanmaPrefetch({roomId}) async {
+  static Future<Map<String, dynamic>> liveRoomDanmaPrefetch({
+    required int roomId,
+  }) async {
     var res = await Request().get(
       Api.liveRoomDmPrefetch,
       queryParameters: {'roomid': roomId},
@@ -121,14 +118,15 @@ class LiveHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']?['room']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonBody(
+      asJsonMap(res.data),
+      parser: (body) => body['data']?['room'],
+    );
   }
 
-  static Future liveRoomGetDanmakuToken({roomId}) async {
+  static Future<Map<String, dynamic>> liveRoomGetDanmakuToken({
+    required int roomId,
+  }) async {
     var res = await Request().get(
       Api.liveRoomDmToken,
       queryParameters: await WbiSign.makSign({
@@ -136,14 +134,10 @@ class LiveHttp {
         'web_location': 444.8,
       }),
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': LiveDmInfoData.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => LiveDmInfoData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<List<LiveEmoteDatum>?>> getLiveEmoticons({
@@ -156,11 +150,10 @@ class LiveHttp {
         'room_id': roomId,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(LiveEmoteData.fromJson(res.data['data']).data);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => LiveEmoteData.fromJson(data).data,
+    );
   }
 
   static Future<LoadingState<LiveIndexData>> liveFeedIndex({
@@ -168,7 +161,7 @@ class LiveHttp {
     required bool isLogin,
     bool moduleSelect = false,
   }) async {
-    final params = {
+    final Map<String, dynamic> params = {
       'access_key': ?Accounts.main.accessKey,
       'appkey': Constants.appKey,
       'channel': 'master',
@@ -246,11 +239,11 @@ class LiveHttp {
   static Future<LoadingState<LiveSecondData>> liveSecondList({
     required int pn,
     required bool isLogin,
-    required areaId,
-    required parentAreaId,
+    required int? areaId,
+    required int? parentAreaId,
     String? sortType,
   }) async {
-    final params = {
+    final Map<String, dynamic> params = {
       'access_key': ?Accounts.main.accessKey,
       'appkey': Constants.appKey,
       'actionKey': 'appkey',
@@ -316,7 +309,7 @@ class LiveHttp {
   static Future<LoadingState<List<AreaList>?>> liveAreaList({
     required bool isLogin,
   }) async {
-    final params = {
+    final Map<String, dynamic> params = {
       'access_key': ?Accounts.main.accessKey,
       'appkey': Constants.appKey,
       'actionKey': 'appkey',
@@ -355,7 +348,7 @@ class LiveHttp {
   static Future<LoadingState<List<AreaItem>>> getLiveFavTag({
     required bool isLogin,
   }) async {
-    final params = {
+    final Map<String, dynamic> params = {
       'access_key': ?Accounts.main.accessKey,
       'appkey': Constants.appKey,
       'actionKey': 'appkey',
@@ -393,10 +386,10 @@ class LiveHttp {
     }
   }
 
-  static Future setLiveFavTag({
+  static Future<Map<String, dynamic>> setLiveFavTag({
     required String ids,
   }) async {
-    final data = {
+    final Map<String, dynamic> data = {
       'tags': ids,
       'access_key': Accounts.main.accessKey,
       'appkey': Constants.appKey,
@@ -433,9 +426,9 @@ class LiveHttp {
 
   static Future<LoadingState<List<AreaItem>?>> liveRoomAreaList({
     required bool isLogin,
-    required parentid,
+    required int parentid,
   }) async {
-    final params = {
+    final Map<String, dynamic> params = {
       'access_key': ?Accounts.main.accessKey,
       'appkey': Constants.appKey,
       'actionKey': 'appkey',
@@ -507,15 +500,14 @@ class LiveHttp {
       Api.liveSearch,
       queryParameters: params,
     );
-    if (res.data['code'] == 0) {
-      return Success(LiveSearchData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => LiveSearchData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<ShieldInfo?>> getLiveInfoByUser(
-    dynamic roomId,
+    Object? roomId,
   ) async {
     var res = await Request().get(
       Api.getLiveInfoByUser,
@@ -526,14 +518,13 @@ class LiveHttp {
         'web_location': 444.8,
       }),
     );
-    if (res.data['code'] == 0) {
-      return Success(LiveDmBlockData.fromJson(res.data['data']).shieldInfo);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => LiveDmBlockData.fromJson(data).shieldInfo,
+    );
   }
 
-  static Future liveSetSilent({
+  static Future<Map<String, dynamic>> liveSetSilent({
     required String type,
     required int level,
   }) async {
@@ -548,14 +539,10 @@ class LiveHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future addShieldKeyword({
+  static Future<Map<String, dynamic>> addShieldKeyword({
     required String keyword,
   }) async {
     final csrf = Accounts.main.csrf;
@@ -568,14 +555,10 @@ class LiveHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future delShieldKeyword({
+  static Future<Map<String, dynamic>> delShieldKeyword({
     required String keyword,
   }) async {
     final csrf = Accounts.main.csrf;
@@ -588,16 +571,12 @@ class LiveHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future liveShieldUser({
-    required dynamic uid,
-    required dynamic roomid,
+  static Future<Map<String, dynamic>> liveShieldUser({
+    required Object? uid,
+    required Object? roomid,
     required int type,
   }) async {
     final csrf = Accounts.main.csrf;
@@ -612,18 +591,14 @@ class LiveHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future liveLikeReport({
+  static Future<Map<String, dynamic>> liveLikeReport({
     required int clickTime,
-    required dynamic roomId,
-    required dynamic uid,
-    required dynamic anchorId,
+    required int roomId,
+    required int uid,
+    required int? anchorId,
   }) async {
     var res = await Request().post(
       Api.liveLikeReport,
@@ -637,15 +612,11 @@ class LiveHttp {
       }),
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState<SuperChatData>> superChatMsg(
-    dynamic roomId,
+    Object? roomId,
   ) async {
     var res = await Request().get(
       Api.superChatMsg,
@@ -653,14 +624,13 @@ class LiveHttp {
         'room_id': roomId,
       },
     );
-    if (res.data['code'] == 0) {
-      try {
-        return Success(SuperChatData.fromJson(res.data['data']));
-      } catch (e) {
-        return Error(e.toString());
-      }
-    } else {
-      return Error(res.data['message']);
+    try {
+      return loadingStateFromJsonData(
+        asJsonMap(res.data),
+        parser: (data) => SuperChatData.fromJson(data),
+      );
+    } catch (e) {
+      return Error(e.toString());
     }
   }
 }

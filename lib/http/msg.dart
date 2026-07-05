@@ -2,6 +2,7 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/models_new/msg/im_user_infos/datum.dart';
 import 'package:PiliPlus/models_new/msg/msg_at/data.dart';
 import 'package:PiliPlus/models_new/msg/msg_dnd/uid_setting.dart';
@@ -34,11 +35,10 @@ class MsgHttp {
         'web_location': 333.40164,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(MsgReplyData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => MsgReplyData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<MsgAtData>> msgFeedAtMe({
@@ -56,11 +56,10 @@ class MsgHttp {
         'web_location': 333.40164,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(MsgAtData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => MsgAtData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<MsgLikeData>> msgFeedLikeMe({
@@ -78,15 +77,14 @@ class MsgHttp {
         'web_location': 333.40164,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(MsgLikeData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => MsgLikeData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<MsgLikeDetailData>> msgLikeDetail({
-    required dynamic cardId,
+    required Object? cardId,
     required int pn,
   }) async {
     var res = await Request().get(
@@ -101,11 +99,10 @@ class MsgHttp {
         'web_location': 333.40164,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(MsgLikeDetailData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => MsgLikeDetailData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<List<MsgSysItem>?>> msgFeedNotify({
@@ -122,18 +119,14 @@ class MsgHttp {
         'web_location': 333.40164,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(
-        (res.data['data'] as List?)
-            ?.map((e) => MsgSysItem.fromJson(e))
-            .toList(),
-      );
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) =>
+          (data as List?)?.map((e) => MsgSysItem.fromJson(e)).toList(),
+    );
   }
 
-  static Future msgSysUpdateCursor(int cursor) async {
+  static Future<Map<String, dynamic>> msgSysUpdateCursor(int cursor) async {
     String csrf = Accounts.main.csrf;
     var res = await Request().get(
       Api.msgSysUpdateCursor,
@@ -142,20 +135,11 @@ class MsgHttp {
         'cursor': cursor,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future uploadImage({
-    required dynamic path,
+  static Future<Map<String, dynamic>> uploadImage({
+    required String path,
     required String bucket,
     required String dir,
   }) async {
@@ -168,20 +152,10 @@ class MsgHttp {
         'csrf': Accounts.main.csrf,
       }),
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': res.data['data'],
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future uploadBfs({
+  static Future<Map<String, dynamic>> uploadBfs({
     required String path,
     String? category,
     String? biz,
@@ -197,21 +171,14 @@ class MsgHttp {
       }),
       cancelToken: cancelToken,
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': UploadBfsResData.fromJson(res.data['data']),
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => UploadBfsResData.fromJson(data),
+    );
   }
 
-  static Future createTextDynamic(
-    dynamic content,
+  static Future<Map<String, dynamic>> createTextDynamic(
+    Object? content,
   ) async {
     String csrf = Accounts.main.csrf;
     Map<String, dynamic> data = await WbiSign.makSign({
@@ -227,17 +194,14 @@ class MsgHttp {
       data: data,
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future removeDynamic({required dynIdStr, dynType, ridStr}) async {
+  static Future<Map<String, dynamic>> removeDynamic({
+    required Object? dynIdStr,
+    Object? dynType,
+    Object? ridStr,
+  }) async {
     var res = await Request().post(
       Api.removeDynamic,
       queryParameters: {
@@ -250,15 +214,11 @@ class MsgHttp {
         "rid_str": ?ridStr,
       },
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future removeMsg(
-    dynamic talkerId,
+  static Future<Map<String, dynamic>> removeMsg(
+    Object? talkerId,
   ) async {
     String csrf = Accounts.main.csrf;
     Map<String, dynamic> data = await WbiSign.makSign({
@@ -281,9 +241,9 @@ class MsgHttp {
     }
   }
 
-  static Future delMsgfeed(
+  static Future<Map<String, dynamic>> delMsgfeed(
     int tp,
-    dynamic id,
+    Object? id,
   ) async {
     String csrf = Accounts.main.csrf;
     var res = await Request().post(
@@ -308,8 +268,8 @@ class MsgHttp {
     }
   }
 
-  static Future delSysMsg(
-    dynamic id,
+  static Future<Map<String, dynamic>> delSysMsg(
+    Object? id,
   ) async {
     String csrf = Accounts.main.csrf;
     var res = await Request().post(
@@ -336,8 +296,8 @@ class MsgHttp {
     }
   }
 
-  static Future setTop({
-    required dynamic talkerId,
+  static Future<Map<String, dynamic>> setTop({
+    required Object? talkerId,
     required int opType,
   }) async {
     String csrf = Accounts.main.csrf;
@@ -366,7 +326,7 @@ class MsgHttp {
   }
 
   // 消息标记已读
-  static Future ackSessionMsg({
+  static Future<Map<String, dynamic>> ackSessionMsg({
     int? talkerId,
     int? ackSeqno,
   }) async {
@@ -398,11 +358,11 @@ class MsgHttp {
   }
 
   // 发送私信
-  static Future sendMsg({
+  static Future<Map<String, dynamic>> sendMsg({
     int? senderUid,
     int? receiverId,
     int? msgType,
-    dynamic content,
+    Object? content,
   }) async {
     String csrf = Accounts.main.csrf;
     final devId = getDevId();
@@ -453,8 +413,8 @@ class MsgHttp {
     return const Uuid().v4();
   }
 
-  static Future msgSetNotice({
-    required dynamic id,
+  static Future<Map<String, dynamic>> msgSetNotice({
+    required Object? id,
     required int noticeState,
   }) async {
     final csrf = Accounts.main.csrf;
@@ -481,10 +441,10 @@ class MsgHttp {
     }
   }
 
-  static Future setMsgDnd({
-    required uid,
+  static Future<Map<String, dynamic>> setMsgDnd({
+    required Object? uid,
     required int setting,
-    required dndUid,
+    required Object? dndUid,
   }) async {
     final csrf = Accounts.main.csrf;
     var res = await Request().post(
@@ -507,9 +467,9 @@ class MsgHttp {
     }
   }
 
-  static Future setPushSs({
+  static Future<Map<String, dynamic>> setPushSs({
     required int setting,
-    required talkerUid,
+    required Object? talkerUid,
   }) async {
     final csrf = Accounts.main.csrf;
     var res = await Request().post(
@@ -557,7 +517,7 @@ class MsgHttp {
   }
 
   static Future<LoadingState<SessionSsData>> getSessionSs({
-    required talkerUid,
+    required Object? talkerUid,
   }) async {
     final csrf = Accounts.main.csrf;
     var res = await Request().get(
@@ -578,14 +538,14 @@ class MsgHttp {
   }
 
   static Future<LoadingState<List<UidSetting>?>> getMsgDnd({
-    required uidsStr,
+    required Object? uidsStr,
   }) async {
     final csrf = Accounts.main.csrf;
     var res = await Request().get(
       Api.getMsgDnd,
       queryParameters: {
         'own_uid': Accounts.main.mid,
-        'uids_str': uidsStr,
+        'uids_str': uidsStr?.toString(),
         'build': 0,
         'mobi_app': 'web',
         'csrf_token': csrf,
@@ -603,7 +563,7 @@ class MsgHttp {
     }
   }
 
-  static Future msgUnread() async {
+  static Future<Map<String, dynamic>> msgUnread() async {
     var res = await Request().get(
       Api.msgUnread,
       queryParameters: {
@@ -623,7 +583,7 @@ class MsgHttp {
     }
   }
 
-  static Future msgFeedUnread() async {
+  static Future<Map<String, dynamic>> msgFeedUnread() async {
     var res = await Request().get(
       Api.msgFeedUnread,
       queryParameters: {

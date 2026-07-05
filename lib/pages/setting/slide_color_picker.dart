@@ -25,12 +25,29 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
   late int _b;
   late final TextEditingController _textController;
 
+  Color get _currentColor => Color.fromARGB(255, _r, _g, _b);
+
+  void _setChannelsFromColor(Color color) {
+    _r = color.r.round();
+    _g = color.g.round();
+    _b = color.b.round();
+  }
+
+  void _updateChannels({
+    int? r,
+    int? g,
+    int? b,
+  }) {
+    _r = r ?? _r;
+    _g = g ?? _g;
+    _b = b ?? _b;
+    _textController.text = _convert;
+  }
+
   @override
   void initState() {
     super.initState();
-    _r = widget.color.red;
-    _g = widget.color.green;
-    _b = widget.color.blue;
+    _setChannelsFromColor(widget.color);
     _textController = TextEditingController(text: _convert);
   }
 
@@ -40,12 +57,8 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
     super.dispose();
   }
 
-  String get _convert => Color.fromRGBO(
-    _r,
-    _g,
-    _b,
-    1,
-  ).toARGB32().toRadixString(16).substring(2).toUpperCase();
+  String get _convert =>
+      _currentColor.toARGB32().toRadixString(16).substring(2).toUpperCase();
 
   Widget _slider({
     required String title,
@@ -96,7 +109,7 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
         children: [
           Container(
             height: 100,
-            color: Color.fromARGB(255, _r, _g, _b),
+            color: _currentColor,
           ),
           const SizedBox(height: 10),
           IntrinsicWidth(
@@ -114,13 +127,11 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
               onChanged: (value) {
                 _textController.text = value.toUpperCase();
                 if (value.length == 6) {
-                  Color color = Color(
+                  final color = Color(
                     int.tryParse('FF$value', radix: 16) ?? 0xFF000000,
                   );
                   setState(() {
-                    _r = color.red;
-                    _g = color.green;
-                    _b = color.blue;
+                    _setChannelsFromColor(color);
                   });
                 }
               },
@@ -131,8 +142,7 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
             value: _r,
             onChanged: (value) {
               setState(() {
-                _r = value.round();
-                _textController.text = _convert;
+                _updateChannels(r: value.round());
               });
             },
           ),
@@ -141,8 +151,7 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
             value: _g,
             onChanged: (value) {
               setState(() {
-                _g = value.round();
-                _textController.text = _convert;
+                _updateChannels(g: value.round());
               });
             },
           ),
@@ -151,8 +160,7 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
             value: _b,
             onChanged: (value) {
               setState(() {
-                _b = value.round();
-                _textController.text = _convert;
+                _updateChannels(b: value.round());
               });
             },
           ),
@@ -181,7 +189,7 @@ class _SlideColorPickerState extends State<SlideColorPicker> {
               TextButton(
                 onPressed: () {
                   Get.back();
-                  widget.callback(Color.fromARGB(255, _r, _g, _b));
+                  widget.callback(_currentColor);
                 },
                 child: const Text('确定'),
               ),

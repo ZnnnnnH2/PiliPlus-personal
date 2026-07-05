@@ -41,8 +41,9 @@ class AboutPage extends StatefulWidget {
 }
 
 class _AboutPageState extends State<AboutPage> {
-  RxString currentVersion = ''.obs;
-  RxString cacheSize = ''.obs;
+  final RxString currentVersion = ''.obs;
+  final RxString cacheSize = ''.obs;
+  int _cacheSizeRequestId = 0;
 
   late int _pressCount = 0;
 
@@ -61,14 +62,20 @@ class _AboutPageState extends State<AboutPage> {
   }
 
   Future<void> getCacheSize() async {
-    cacheSize.value = CacheManage.formatSize(
-      await CacheManage.loadApplicationCache(),
-    );
+    final requestId = ++_cacheSizeRequestId;
+    final size = await CacheManage.loadApplicationCache();
+    if (!mounted || requestId != _cacheSizeRequestId) {
+      return;
+    }
+    cacheSize.value = CacheManage.formatSize(size);
   }
 
   Future<void> getCurrentApp() async {
-    var currentInfo = await PackageInfo.fromPlatform();
-    String buildNumber = currentInfo.buildNumber;
+    final currentInfo = await PackageInfo.fromPlatform();
+    if (!mounted) {
+      return;
+    }
+    final buildNumber = currentInfo.buildNumber;
     currentVersion.value = "${currentInfo.version}+$buildNumber";
   }
 
@@ -220,13 +227,13 @@ Commit Hash: ${BuildConfig.commitHash}''',
                     SmartDialog.showLoading(msg: '正在清除...');
                     try {
                       await CacheManage.clearLibraryCache();
+                      await getCacheSize();
                       SmartDialog.showToast('清除成功');
                     } catch (err) {
                       SmartDialog.showToast(err.toString());
                     } finally {
                       SmartDialog.dismiss();
                     }
-                    getCacheSize();
                   },
                 );
               }

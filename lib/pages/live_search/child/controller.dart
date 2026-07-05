@@ -13,36 +13,33 @@ class LiveSearchChildController
 
   final LiveSearchController controller;
   final LiveSearchType searchType;
+  final AccountService accountService = Get.find<AccountService>();
 
-  AccountService accountService = Get.find<AccountService>();
+  int get _totalCount => controller.counts[searchType.index];
+
+  set _totalCount(int value) => controller.counts[searchType.index] = value;
 
   @override
   void checkIsEnd(int length) {
-    switch (searchType) {
-      case LiveSearchType.room:
-        if (controller.counts.first != -1 &&
-            length >= controller.counts.first) {
-          isEnd = true;
-        }
-        break;
-      case LiveSearchType.user:
-        if (controller.counts[1] != -1 && length >= controller.counts[1]) {
-          isEnd = true;
-        }
-        break;
+    if (_totalCount != -1 && length >= _totalCount) {
+      isEnd = true;
     }
   }
 
   @override
-  List? getDataList(response) {
-    switch (searchType) {
-      case LiveSearchType.room:
-        controller.counts[searchType.index] = response.room?.totalRoom ?? 0;
-        return response.room?.list;
-      case LiveSearchType.user:
-        controller.counts[searchType.index] = response.user?.totalUser ?? 0;
-        return response.user?.list;
-    }
+  List? getDataList(response) => switch (searchType) {
+    LiveSearchType.room => _getRoomList(response),
+    LiveSearchType.user => _getUserList(response),
+  };
+
+  List? _getRoomList(LiveSearchData response) {
+    _totalCount = response.room?.totalRoom ?? 0;
+    return response.room?.list;
+  }
+
+  List? _getUserList(LiveSearchData response) {
+    _totalCount = response.user?.totalUser ?? 0;
+    return response.user?.list;
   }
 
   @override

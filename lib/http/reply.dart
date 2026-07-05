@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/models_new/emote/data.dart';
 import 'package:PiliPlus/models_new/emote/package.dart';
 import 'package:PiliPlus/models_new/reply/data.dart';
@@ -16,7 +17,7 @@ class ReplyHttp {
     extra: {'account': NoAccount()},
   );
 
-  static Future<LoadingState> replyList({
+  static Future<LoadingState<ReplyData>> replyList({
     required bool isLogin,
     required int oid,
     required String nextOffset,
@@ -47,12 +48,10 @@ class ReplyHttp {
             },
             options: !isLogin ? options : null,
           );
-    if (res.data['code'] == 0) {
-      ReplyData replyData = ReplyData.fromJson(res.data['data']);
-      return Success(replyData);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => ReplyData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<ReplyReplyData>> replyReplyList({
@@ -75,19 +74,15 @@ class ReplyHttp {
       },
       options: !isLogin ? options : null,
     );
-    if (res.data['code'] == 0) {
-      ReplyReplyData replyData = ReplyReplyData.fromJson(res.data['data']);
-      return Success(replyData);
-    } else {
-      return Error(
-        isCheck
-            ? '${res.data['code']}${res.data['message']}'
-            : res.data['message'],
-      );
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => ReplyReplyData.fromJson(data),
+      errorMessage: (body) =>
+          isCheck ? '${body['code']}${body['message']}' : responseMessage(body),
+    );
   }
 
-  static Future hateReply({
+  static Future<Map<String, dynamic>> hateReply({
     required int type,
     required int action,
     required int oid,
@@ -104,15 +99,11 @@ class ReplyHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // 评论点赞
-  static Future likeReply({
+  static Future<Map<String, dynamic>> likeReply({
     required int type,
     required int oid,
     required int rpid,
@@ -129,11 +120,7 @@ class ReplyHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState<List<Package>?>> getEmoteList({
@@ -146,17 +133,16 @@ class ReplyHttp {
         'web_location': '333.1245',
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(EmoteModelData.fromJson(res.data['data']).packages);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => EmoteModelData.fromJson(data).packages,
+    );
   }
 
-  static Future replyTop({
-    required oid,
-    required type,
-    required rpid,
+  static Future<Map<String, dynamic>> replyTop({
+    required Object? oid,
+    required Object? type,
+    required Object? rpid,
     required bool isUpTop,
   }) async {
     var res = await Request().post(
@@ -170,10 +156,6 @@ class ReplyHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 }

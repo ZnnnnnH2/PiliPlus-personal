@@ -30,10 +30,12 @@ class MemberSearchChildPage extends StatefulWidget {
 class _MemberSearchChildPageState extends State<MemberSearchChildPage>
     with AutomaticKeepAliveClientMixin, DynMixin, GridMixin {
   MemberSearchChildController get _controller => widget.controller;
+  MemberSearchType get _searchType => widget.searchType;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
+    final body = Obx(() => _buildBody(_controller.loadingState.value));
     return refreshIndicator(
       onRefresh: _controller.onRefresh,
       child: CustomScrollView(
@@ -42,16 +44,12 @@ class _MemberSearchChildPageState extends State<MemberSearchChildPage>
         slivers: [
           SliverPadding(
             padding: EdgeInsets.only(
-              top: widget.searchType == MemberSearchType.archive ? 7 : 0,
+              top: _searchType == MemberSearchType.archive ? 7 : 0,
               bottom: MediaQuery.viewPaddingOf(context).bottom + 100,
             ),
-            sliver: switch (widget.searchType) {
-              MemberSearchType.archive => Obx(
-                () => _buildBody(_controller.loadingState.value),
-              ),
-              MemberSearchType.dynamic => buildPage(
-                Obx(() => _buildBody(_controller.loadingState.value)),
-              ),
+            sliver: switch (_searchType) {
+              MemberSearchType.archive => body,
+              MemberSearchType.dynamic => buildPage(body),
             },
           ),
         ],
@@ -60,11 +58,54 @@ class _MemberSearchChildPageState extends State<MemberSearchChildPage>
   }
 
   Widget get _buildLoading {
-    return switch (widget.searchType) {
+    return switch (_searchType) {
       MemberSearchType.archive => gridSkeleton,
       MemberSearchType.dynamic => dynSkeleton,
     };
   }
+
+  void _loadMoreOnLastItem(int index, int length) {
+    if (index == length - 1) {
+      _controller.onLoadMore();
+    }
+  }
+
+  Widget _buildArchiveSliver(List response) => SliverGrid.builder(
+    gridDelegate: gridDelegate,
+    itemBuilder: (context, index) {
+      _loadMoreOnLastItem(index, response.length);
+      return VideoCardH(videoItem: response[index]);
+    },
+    itemCount: response.length,
+  );
+
+  Widget _buildDynamicPanel(dynamic item) =>
+      DynamicPanel(item: item, maxWidth: maxWidth);
+
+  Widget _buildDynamicSliver(List response) =>
+      GlobalData().dynamicsWaterfallFlow
+      ? SliverWaterfallFlow(
+          gridDelegate: dynGridDelegate,
+          delegate: SliverChildBuilderDelegate(
+            (_, index) {
+              _loadMoreOnLastItem(index, response.length);
+              return _buildDynamicPanel(response[index]);
+            },
+            childCount: response.length,
+          ),
+        )
+      : SliverList.builder(
+          itemBuilder: (context, index) {
+            _loadMoreOnLastItem(index, response.length);
+            return _buildDynamicPanel(response[index]);
+          },
+          itemCount: response.length,
+        );
+
+  Widget _buildSuccessBody(List response) => switch (_searchType) {
+    MemberSearchType.archive => _buildArchiveSliver(response),
+    MemberSearchType.dynamic => _buildDynamicSliver(response),
+  };
 
   Widget _buildBody(LoadingState<List?> loadingState) {
     return switch (loadingState) {
@@ -72,51 +113,7 @@ class _MemberSearchChildPageState extends State<MemberSearchChildPage>
       Success(:var response) =>
         response?.isNotEmpty == true
             ? Builder(
-                builder: (context) {
-                  return switch (widget.searchType) {
-                    MemberSearchType.archive => SliverGrid.builder(
-                      gridDelegate: gridDelegate,
-                      itemBuilder: (context, index) {
-                        if (index == response.length - 1) {
-                          _controller.onLoadMore();
-                        }
-                        return VideoCardH(
-                          videoItem: response[index],
-                        );
-                      },
-                      itemCount: response!.length,
-                    ),
-                    MemberSearchType.dynamic =>
-                      GlobalData().dynamicsWaterfallFlow
-                          ? SliverWaterfallFlow(
-                              gridDelegate: dynGridDelegate,
-                              delegate: SliverChildBuilderDelegate(
-                                (_, index) {
-                                  if (index == response.length - 1) {
-                                    _controller.onLoadMore();
-                                  }
-                                  return DynamicPanel(
-                                    item: response[index],
-                                    maxWidth: maxWidth,
-                                  );
-                                },
-                                childCount: response!.length,
-                              ),
-                            )
-                          : SliverList.builder(
-                              itemBuilder: (context, index) {
-                                if (index == response.length - 1) {
-                                  _controller.onLoadMore();
-                                }
-                                return DynamicPanel(
-                                  item: response[index],
-                                  maxWidth: maxWidth,
-                                );
-                              },
-                              itemCount: response!.length,
-                            ),
-                  };
-                },
+                builder: (context) => _buildSuccessBody(response!),
               )
             : HttpError(onReload: _controller.onReload),
       Error(:var errMsg) => HttpError(

@@ -1,0 +1,27 @@
+dependency_overrides:
+  flutter_inappwebview: ^6.1.5
+  package_info_plus: ^9.0.1
+  media_kit: 1.2.6
+  media_kit_libs_video: 1.0.7
+  extended_nested_scroll_view:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/extended_nested_scroll_view_mod
+  material_design_icons_flutter:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/material_design_icons_flutter_const
+  media_kit_video:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/media_kit_version_1.2.5_bgg/media_kit_video
+  auto_orientation:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/auto_orientation_master
+  canvas_danmaku:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/canvas_danmaku_main
+  floating:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/floating_version_3
+  chat_bottom_container:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/flutter_chat_packages_main/packages/chat_bottom_container
+  webdav_client:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/webdav_client_main
+  flutter_sortable_wrap:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/flutter_sortable_wrap_master
+  super_sliver_list:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/super_sliver_list_mod
+  media_kit_libs_android_video:
+    path: C:/Users/znnnnnh2/sdk/pub-path-overrides/src/media_kit_version_1.2.5_my/libs/android/media_kit_libs_android_video

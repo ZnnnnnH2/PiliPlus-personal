@@ -35,8 +35,7 @@ class MpvConvertWebp {
   }) : duration = end - start;
 
   Future<void> _init() async {
-    _ctx = await Initializer.create(
-      NativeLibrary.path,
+    _ctx = await Initializer(_mpv).create(
       _onEvent,
       options: {
         'o': outFile,
@@ -58,7 +57,7 @@ class MpvConvertWebp {
   }
 
   void dispose() {
-    Initializer.dispose(_ctx);
+    Initializer(_mpv).dispose(_ctx);
     _mpv.mpv_terminate_destroy(_ctx);
     if (!_completer.isCompleted) _completer.complete(false);
   }

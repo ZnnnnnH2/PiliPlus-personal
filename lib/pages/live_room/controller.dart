@@ -69,6 +69,9 @@ class LiveRoomController extends GetxController {
   late final RxList<SuperChatItem> superChatMsg = <SuperChatItem>[].obs;
   RxBool disableAutoScroll = false.obs;
   LiveMessageStream? _msgStream;
+  bool _prefetchingLiveMsg = false;
+  bool _loadingSuperChat = false;
+  bool _startingLiveMsg = false;
   late final ScrollController scrollController = ScrollController()
     ..addListener(listener);
   late final RxInt pageIndex = 0.obs;
@@ -250,11 +253,17 @@ class LiveRoomController extends GetxController {
   }
 
   void startLiveMsg() {
-    if (messages.isEmpty) {
-      prefetch();
-      if (showSuperChat) {
-        getSuperChatMsg();
-      }
+    if (messages.isEmpty && !_prefetchingLiveMsg) {
+      _prefetchingLiveMsg = true;
+      prefetch().whenComplete(() {
+        _prefetchingLiveMsg = false;
+      });
+    }
+    if (showSuperChat && superChatMsg.isEmpty && !_loadingSuperChat) {
+      _loadingSuperChat = true;
+      getSuperChatMsg().whenComplete(() {
+        _loadingSuperChat = false;
+      });
     }
     if (_msgStream != null) {
       return;
@@ -263,11 +272,17 @@ class LiveRoomController extends GetxController {
       initDm(dmInfo!);
       return;
     }
+    if (_startingLiveMsg) {
+      return;
+    }
+    _startingLiveMsg = true;
     LiveHttp.liveRoomGetDanmakuToken(roomId: roomId).then((res) {
       if (res['status']) {
         dmInfo = res['data'];
         initDm(dmInfo!);
       }
+    }).whenComplete(() {
+      _startingLiveMsg = false;
     });
   }
 
@@ -358,7 +373,9 @@ class LiveRoomController extends GetxController {
                     plPlayerController.danmakuController?.addDanmaku(
                       DanmakuContentItem(
                         extra['content'],
-                        color: DmUtils.decimalToColor(extra['color']),
+                        color: DmUtils.decimalToColor(
+                          extra['color'],
+                        ).withValues(alpha: plPlayerController.danmakuOpacity),
                         type: DmUtils.getPosition(extra['mode']),
                         selfSend: extra['send_from_me'] ?? false,
                       ),

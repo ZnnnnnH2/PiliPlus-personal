@@ -3215,7 +3215,8 @@ class _CaretPainter extends RenderEditablePainter {
   Color? get caretColor => _caretColor;
   Color? _caretColor;
   set caretColor(Color? value) {
-    if (caretColor?.value == value?.value) {
+    if (identical(caretColor, value) ||
+        caretColor?.toARGB32() == value?.toARGB32()) {
       return;
     }
 
@@ -3246,7 +3247,8 @@ class _CaretPainter extends RenderEditablePainter {
   Color? get backgroundCursorColor => _backgroundCursorColor;
   Color? _backgroundCursorColor;
   set backgroundCursorColor(Color? value) {
-    if (backgroundCursorColor?.value == value?.value) {
+    if (identical(backgroundCursorColor, value) ||
+        backgroundCursorColor?.toARGB32() == value?.toARGB32()) {
       return;
     }
 
@@ -3318,7 +3320,7 @@ class _CaretPainter extends RenderEditablePainter {
       paintRegularCursor(canvas, renderEditable, caretColor, caretTextPosition);
     }
 
-    final Color? floatingCursorColor = this.caretColor?.withOpacity(0.75);
+    final Color? floatingCursorColor = this.caretColor?.withValues(alpha: 0.75);
     // Floating Cursor.
     if (floatingCursorRect == null ||
         floatingCursorColor == null ||

@@ -9,6 +9,7 @@ import 'package:PiliPlus/models_new/search/search_trending/data.dart';
 import 'package:PiliPlus/utils/extension.dart';
 import 'package:PiliPlus/utils/id_utils.dart';
 import 'package:PiliPlus/utils/storage.dart';
+import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/storage_pref.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
@@ -72,6 +73,7 @@ class SSearchController extends GetxController
   // suggestion
   final bool searchSuggestion = Pref.searchSuggestion;
   late final RxList<SearchSuggestItem> searchSuggestList;
+  int _suggestRequestId = 0;
 
   // trending
   final bool enableTrending = Pref.enableTrending;
@@ -80,6 +82,7 @@ class SSearchController extends GetxController
   // rcmd
   final bool enableSearchRcmd = Pref.enableSearchRcmd;
   late final Rx<LoadingState<SearchRcmdData>> recommendData;
+  String get currentKeyword => _keyword;
 
   @override
   void onInit() {
@@ -91,9 +94,12 @@ class SSearchController extends GetxController
       controller.text = text;
     }
 
-    historyList = List<String>.from(
-      GStorage.historyWord.get('cacheList') ?? [],
+    historyList = _normalizeHistory(
+      List<String>.from(
+        GStorage.historyWord.get('cacheList') ?? [],
+      ),
     ).obs;
+    validateUid();
 
     if (searchSuggestion) {
       subInit();
@@ -111,17 +117,70 @@ class SSearchController extends GetxController
     }
   }
 
+  String get _keyword => controller.text.trim();
+
+  List<String> _normalizeHistory(List<String> list) {
+    final normalized = <String>[];
+    final seen = <String>{};
+    for (final item in list) {
+      final keyword = item.trim();
+      if (keyword.isNotEmpty && seen.add(keyword)) {
+        normalized.add(keyword);
+      }
+    }
+    return normalized;
+  }
+
+  void _setSearchText(String value) {
+    controller.text = value;
+    controller.selection = TextSelection.collapsed(offset: value.length);
+  }
+
+  void _clearSuggestList() {
+    _suggestRequestId++;
+    if (searchSuggestion && searchSuggestList.isNotEmpty) {
+      searchSuggestList.clear();
+    }
+  }
+
+  void _persistHistory() {
+    GStorage.historyWord.put('cacheList', historyList.toList(growable: false));
+  }
+
+  void _insertHistory(String keyword) {
+    final normalizedKeyword = keyword.trim();
+    if (normalizedKeyword.isEmpty) {
+      return;
+    }
+    historyList
+      ..remove(normalizedKeyword)
+      ..insert(0, normalizedKeyword);
+    _persistHistory();
+  }
+
+  void replaceHistory(List<String> list) {
+    historyList.value = _normalizeHistory(list);
+    _persistHistory();
+  }
+
+  void toggleRecordSearchHistory() {
+    final enable = !recordSearchHistory.value;
+    recordSearchHistory.value = enable;
+    GStorage.setting.put(SettingBoxKey.recordSearchHistory, enable);
+  }
+
   void validateUid() {
-    showUidBtn.value = IdUtils.digitOnlyRegExp.hasMatch(controller.text);
+    showUidBtn.value = IdUtils.digitOnlyRegExp.hasMatch(_keyword);
   }
 
   void onChange(String value) {
     validateUid();
     if (searchSuggestion) {
-      if (value.isEmpty) {
-        searchSuggestList.clear();
+      final keyword = value.trim();
+      if (keyword.isEmpty) {
+        _clearSuggestList();
       } else {
-        ctr!.add(value);
+        ctr?.add(keyword);
       }
     }
   }
@@ -129,7 +188,7 @@ class SSearchController extends GetxController
   void onClear() {
     if (controller.value.text != '') {
       controller.clear();
-      if (searchSuggestion) searchSuggestList.clear();
+      _clearSuggestList();
       searchFocusNode.requestFocus();
       showUidBtn.value = false;
     } else {
@@ -139,19 +198,23 @@ class SSearchController extends GetxController
 
   // 搜索
   Future<void> submit() async {
-    if (controller.text.isEmpty) {
+    var keyword = _keyword;
+    if (keyword.isEmpty) {
       if (hintText.isNullOrEmpty) {
         return;
       }
-      controller.text = hintText!;
+      keyword = hintText!.trim();
+      if (keyword.isEmpty) {
+        return;
+      }
+      _setSearchText(keyword);
       validateUid();
+    } else if (keyword != controller.text) {
+      _setSearchText(keyword);
     }
 
     if (recordSearchHistory.value) {
-      historyList
-        ..remove(controller.text)
-        ..insert(0, controller.text);
-      GStorage.historyWord.put('cacheList', historyList);
+      _insertHistory(keyword);
     }
 
     searchFocusNode.unfocus();
@@ -159,7 +222,7 @@ class SSearchController extends GetxController
       '/searchResult',
       parameters: {
         'tag': tag,
-        'keyword': controller.text,
+        'keyword': keyword,
       },
       arguments: {
         'initIndex': initIndex,
@@ -186,27 +249,40 @@ class SSearchController extends GetxController
   }
 
   void onClickKeyword(String keyword) {
-    controller.text = keyword;
+    _setSearchText(keyword.trim());
     validateUid();
-
-    if (searchSuggestion) searchSuggestList.clear();
+    _clearSuggestList();
     submit();
   }
 
   @override
   Future<void> onValueChanged(String value) async {
-    var res = await SearchHttp.searchSuggest(term: value);
-    if (res['status']) {
+    final keyword = value.trim();
+    if (keyword.isEmpty) {
+      _clearSuggestList();
+      return;
+    }
+    final requestId = ++_suggestRequestId;
+    final res = await SearchHttp.searchSuggest(term: keyword);
+    final isLatest = requestId == _suggestRequestId && keyword == _keyword;
+    if (!isLatest) {
+      return;
+    }
+    if (res['status'] == true) {
       SearchSuggestModel data = res['data'];
       if (data.tag?.isNotEmpty == true) {
         searchSuggestList.value = data.tag!;
+      } else {
+        searchSuggestList.clear();
       }
+    } else {
+      searchSuggestList.clear();
     }
   }
 
   void onLongSelect(String word) {
     historyList.remove(word);
-    GStorage.historyWord.put('cacheList', historyList);
+    _persistHistory();
   }
 
   void onClearHistory() {

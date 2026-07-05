@@ -1059,28 +1059,32 @@ class _LiveDanmakuState extends State<LiveDanmaku> {
         return AnimatedOpacity(
           opacity: plPlayerController.enableShowDanmaku.value ? 1 : 0,
           duration: const Duration(milliseconds: 100),
-          child: DanmakuScreen(
-            createdController: (DanmakuController e) {
-              widget.liveRoomController.danmakuController =
-                  plPlayerController.danmakuController = e;
+          child: LayoutBuilder(
+            builder: (BuildContext context, BoxConstraints constraints) {
+              return DanmakuScreen(
+                createdController: (DanmakuController e) {
+                  widget.liveRoomController.danmakuController =
+                      plPlayerController.danmakuController = e;
+                },
+                size: constraints.biggest,
+                option: DanmakuOption(
+                  fontSize: _fontSize,
+                  fontWeight: plPlayerController.fontWeight,
+                  area: plPlayerController.showArea,
+                  hideTop: plPlayerController.blockTypes.contains(5),
+                  hideScroll: plPlayerController.blockTypes.contains(2),
+                  hideBottom: plPlayerController.blockTypes.contains(4),
+                  duration:
+                      plPlayerController.danmakuDuration /
+                      plPlayerController.playbackSpeed,
+                  staticDuration:
+                      plPlayerController.danmakuStaticDuration /
+                      plPlayerController.playbackSpeed,
+                  strokeWidth: plPlayerController.strokeWidth,
+                  lineHeight: plPlayerController.danmakuLineHeight,
+                ),
+              );
             },
-            option: DanmakuOption(
-              fontSize: _fontSize,
-              fontWeight: plPlayerController.fontWeight,
-              area: plPlayerController.showArea,
-              opacity: plPlayerController.danmakuOpacity,
-              hideTop: plPlayerController.blockTypes.contains(5),
-              hideScroll: plPlayerController.blockTypes.contains(2),
-              hideBottom: plPlayerController.blockTypes.contains(4),
-              duration:
-                  plPlayerController.danmakuDuration /
-                  plPlayerController.playbackSpeed,
-              staticDuration:
-                  plPlayerController.danmakuStaticDuration /
-                  plPlayerController.playbackSpeed,
-              strokeWidth: plPlayerController.strokeWidth,
-              lineHeight: plPlayerController.danmakuLineHeight,
-            ),
           ),
         );
       },

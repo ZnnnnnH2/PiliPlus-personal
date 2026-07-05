@@ -1727,7 +1727,7 @@ class RichTextFieldState extends State<RichTextField>
                   cupertinoTheme.primaryColor;
         selectionColor =
             selectionStyle.selectionColor ??
-            cupertinoTheme.primaryColor.withOpacity(0.40);
+            cupertinoTheme.primaryColor.withValues(alpha: 0.40);
         cursorRadius ??= const Radius.circular(2.0);
         cursorOffset = Offset(
           iOSHorizontalOffset / MediaQuery.devicePixelRatioOf(context),
@@ -1748,7 +1748,7 @@ class RichTextFieldState extends State<RichTextField>
                   cupertinoTheme.primaryColor;
         selectionColor =
             selectionStyle.selectionColor ??
-            cupertinoTheme.primaryColor.withOpacity(0.40);
+            cupertinoTheme.primaryColor.withValues(alpha: 0.40);
         cursorRadius ??= const Radius.circular(2.0);
         cursorOffset = Offset(
           iOSHorizontalOffset / MediaQuery.devicePixelRatioOf(context),
@@ -1778,7 +1778,7 @@ class RichTextFieldState extends State<RichTextField>
                   theme.colorScheme.primary;
         selectionColor =
             selectionStyle.selectionColor ??
-            theme.colorScheme.primary.withOpacity(0.40);
+            theme.colorScheme.primary.withValues(alpha: 0.40);
 
       case TargetPlatform.linux:
         forcePressEnabled = false;
@@ -1792,7 +1792,7 @@ class RichTextFieldState extends State<RichTextField>
                   theme.colorScheme.primary;
         selectionColor =
             selectionStyle.selectionColor ??
-            theme.colorScheme.primary.withOpacity(0.40);
+            theme.colorScheme.primary.withValues(alpha: 0.40);
         handleDidGainAccessibilityFocus = () {
           // Automatically activate the TextField when it receives accessibility focus.
           if (!_effectiveFocusNode.hasFocus &&
@@ -1816,7 +1816,7 @@ class RichTextFieldState extends State<RichTextField>
                   theme.colorScheme.primary;
         selectionColor =
             selectionStyle.selectionColor ??
-            theme.colorScheme.primary.withOpacity(0.40);
+            theme.colorScheme.primary.withValues(alpha: 0.40);
         handleDidGainAccessibilityFocus = () {
           // Automatically activate the TextField when it receives accessibility focus.
           if (!_effectiveFocusNode.hasFocus &&
@@ -2046,7 +2046,7 @@ TextStyle? _m3StateInputStyle(BuildContext context) =>
                 .textTheme
                 .bodyLarge!
                 .color
-                ?.withOpacity(0.38));
+                ?.withValues(alpha: 0.38));
       }
       return TextStyle(color: Theme.of(context).textTheme.bodyLarge!.color);
     });

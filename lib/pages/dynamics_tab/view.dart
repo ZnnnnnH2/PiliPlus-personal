@@ -4,13 +4,11 @@ import 'package:PiliPlus/common/widgets/loading_widget/http_error.dart';
 import 'package:PiliPlus/common/widgets/refresh_indicator.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/models/common/dynamic/dynamics_type.dart';
-import 'package:PiliPlus/models/common/nav_bar_config.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
 import 'package:PiliPlus/pages/common/common_page.dart';
 import 'package:PiliPlus/pages/dynamics/controller.dart';
 import 'package:PiliPlus/pages/dynamics/widgets/dynamic_panel.dart';
 import 'package:PiliPlus/pages/dynamics_tab/controller.dart';
-import 'package:PiliPlus/pages/main/controller.dart';
 import 'package:PiliPlus/utils/global_data.dart';
 import 'package:PiliPlus/utils/waterfall.dart';
 import 'package:flutter/material.dart';
@@ -31,7 +29,6 @@ class _DynamicsTabPageState
     extends CommonPageState<DynamicsTabPage, DynamicsTabController>
     with AutomaticKeepAliveClientMixin, DynMixin {
   StreamSubscription? _listener;
-  late final MainController _mainController = Get.find<MainController>();
 
   DynamicsController dynamicsController = Get.put(DynamicsController());
   @override

@@ -32,6 +32,20 @@ import 'package:get/get.dart';
 import 'package:media_kit/media_kit.dart';
 import 'package:window_manager/window_manager.dart';
 
+Future<void> _configureAndroidDisplayMode() async {
+  if (!Platform.isAndroid) {
+    return;
+  }
+  try {
+    final List<DisplayMode> modes = await FlutterDisplayMode.supported;
+    final storageDisplay = GStorage.setting.get(SettingBoxKey.displayMode);
+    final DisplayMode? displayMode = storageDisplay != null
+        ? modes.firstWhereOrNull((e) => e.toString() == storageDisplay)
+        : null;
+    await FlutterDisplayMode.setPreferredMode(displayMode ?? DisplayMode.auto);
+  } catch (_) {}
+}
+
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   MediaKit.ensureInitialized();
@@ -51,6 +65,7 @@ void main() async {
           ],
         ],
       ),
+      _configureAndroidDisplayMode(),
       setupServiceLocator(),
     ],
   ]);
@@ -148,23 +163,6 @@ class MyApp extends StatelessWidget {
     Color brandColor = colorThemeTypes[Pref.customColor].color;
     bool isDynamicColor = Pref.dynamicColor;
     FlexSchemeVariant variant = FlexSchemeVariant.values[Pref.schemeVariant];
-
-    // 强制设置高帧率
-    if (Platform.isAndroid) {
-      late List<DisplayMode> modes;
-      FlutterDisplayMode.supported.then((value) {
-        modes = value;
-        var storageDisplay = GStorage.setting.get(SettingBoxKey.displayMode);
-        DisplayMode? displayMode;
-        if (storageDisplay != null) {
-          displayMode = modes.firstWhereOrNull(
-            (e) => e.toString() == storageDisplay,
-          );
-        }
-        displayMode ??= DisplayMode.auto;
-        FlutterDisplayMode.setPreferredMode(displayMode);
-      });
-    }
 
     return DynamicColorBuilder(
       builder: ((ColorScheme? lightDynamic, ColorScheme? darkDynamic) {

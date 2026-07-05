@@ -112,10 +112,10 @@ class Update {
   }
 
   // 下载适用于当前系统的安装包
-  static Future<void> onDownload(data) async {
+  static Future<void> onDownload(Map<String, dynamic> data) async {
     SmartDialog.dismiss();
     try {
-      void download(plat) {
+      void download(String plat) {
         if (data['assets'].isNotEmpty) {
           for (dynamic i in data['assets']) {
             if (i['name'].contains(plat)) {

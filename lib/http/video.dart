@@ -5,6 +5,7 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
 import 'package:PiliPlus/http/login.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/http/ua_type.dart';
 import 'package:PiliPlus/models/common/account_type.dart';
 import 'package:PiliPlus/models/common/video/video_type.dart';
@@ -37,8 +38,18 @@ class VideoHttp {
   static RegExp zoneRegExp = RegExp(Pref.banWordForZone, caseSensitive: false);
   static bool enableFilter = zoneRegExp.pattern.isNotEmpty;
 
+  static List<HotVideoItemModel>? _parseRelatedVideos(dynamic data) {
+    final items = (data as List?)?.map((i) => HotVideoItemModel.fromJson(i));
+    return RecommendFilter.applyFilterToRelatedVideos
+        ? items?.where((i) => !RecommendFilter.filterAll(i)).toList()
+        : items?.toList();
+  }
+
+  static String _pgcToast(JsonMap body) =>
+      body['result']?['toast']?.toString() ?? 'failed';
+
   // 首页推荐视频
-  static Future<LoadingState> rcmdVideoList({
+  static Future<LoadingState<List<RecVideoItemModel>>> rcmdVideoList({
     required int ps,
     required int freshIdx,
   }) async {
@@ -74,8 +85,10 @@ class VideoHttp {
   }
 
   // 添加额外的loginState变量模拟未登录状态
-  static Future<LoadingState> rcmdVideoListApp({required int freshIdx}) async {
-    final params = {
+  static Future<LoadingState<List<RecVideoItemAppModel>>> rcmdVideoListApp({
+    required int freshIdx,
+  }) async {
+    final Map<String, dynamic> params = {
       'build': 2001100,
       'c_locale': 'zh_CN',
       'channel': 'master',
@@ -189,8 +202,8 @@ class VideoHttp {
     String? bvid,
     required int cid,
     int? qn,
-    dynamic epid,
-    dynamic seasonId,
+    Object? epid,
+    Object? seasonId,
     required bool tryLook,
     required VideoType videoType,
   }) async {
@@ -278,7 +291,9 @@ class VideoHttp {
     }
   }
 
-  static Future videoRelation({required dynamic bvid}) async {
+  static Future<Map<String, dynamic>> videoRelation({
+    required String bvid,
+  }) async {
     var res = await Request().get(
       Api.videoRelation,
       queryParameters: {
@@ -286,17 +301,10 @@ class VideoHttp {
         'bvid': bvid,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': VideoRelation.fromJson(res.data['data']),
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => VideoRelation.fromJson(data),
+    );
   }
 
   // 相关视频
@@ -307,34 +315,26 @@ class VideoHttp {
       Api.relatedList,
       queryParameters: {'bvid': bvid},
     );
-    if (res.data['code'] == 0) {
-      final items = (res.data['data'] as List?)?.map(
-        (i) => HotVideoItemModel.fromJson(i),
-      );
-      final list = RecommendFilter.applyFilterToRelatedVideos
-          ? items?.where((i) => !RecommendFilter.filterAll(i)).toList()
-          : items?.toList();
-      return Success(list);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: _parseRelatedVideos,
+    );
   }
 
   // 获取点赞/投币/收藏状态 pgc
-  static Future pgcLikeCoinFav({dynamic epId}) async {
+  static Future<Map<String, dynamic>> pgcLikeCoinFav({Object? epId}) async {
     var res = await Request().get(
       Api.pgcLikeCoinFav,
       queryParameters: {'ep_id': epId},
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': PgcLCF.fromJson(res.data['data'])};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PgcLCF.fromJson(data),
+    );
   }
 
   // 投币
-  static Future coinVideo({
+  static Future<Map<String, dynamic>> coinVideo({
     required String bvid,
     required int multiply,
     int selectLike = 0,
@@ -350,15 +350,14 @@ class VideoHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // 一键三连 pgc
-  static Future pgcTriple({dynamic epId, required dynamic seasonId}) async {
+  static Future<Map<String, dynamic>> pgcTriple({
+    Object? epId,
+    required Object? seasonId,
+  }) async {
     var res = await Request().post(
       Api.pgcTriple,
       data: {
@@ -374,15 +373,14 @@ class VideoHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': PgcTriple.fromJson(res.data['data'])};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PgcTriple.fromJson(data),
+    );
   }
 
   // 一键三连
-  static Future ugcTriple({required String bvid}) async {
+  static Future<Map<String, dynamic>> ugcTriple({required String bvid}) async {
     var res = await Request().post(
       Api.ugcTriple,
       data: {
@@ -404,15 +402,17 @@ class VideoHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': UgcTriple.fromJson(res.data['data'])};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => UgcTriple.fromJson(data),
+    );
   }
 
   // （取消）点赞
-  static Future likeVideo({required String bvid, required bool type}) async {
+  static Future<Map<String, dynamic>> likeVideo({
+    required String bvid,
+    required bool type,
+  }) async {
     var res = await Request().post(
       Api.likeVideo,
       data: {
@@ -421,15 +421,14 @@ class VideoHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // （取消）点踩
-  static Future dislikeVideo({required String bvid, required bool type}) async {
+  static Future<Map<String, dynamic>> dislikeVideo({
+    required String bvid,
+    required bool type,
+  }) async {
     if (Accounts.main.accessKey.isNullOrEmpty) {
       return {'status': false, 'msg': "请退出账号后重新登录"};
     }
@@ -452,7 +451,7 @@ class VideoHttp {
   }
 
   // 推送不感兴趣反馈
-  static Future feedDislike({
+  static Future<Map<String, dynamic>> feedDislike({
     required String goto,
     required int id,
     int? reasonId,
@@ -473,15 +472,11 @@ class VideoHttp {
         'mobi_app': 'android',
       },
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // 推送不感兴趣取消
-  static Future feedDislikeCancel({
+  static Future<Map<String, dynamic>> feedDislikeCancel({
     required String goto,
     required int id,
     int? reasonId,
@@ -501,11 +496,7 @@ class VideoHttp {
         'mobi_app': 'android',
       },
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // 发表评论 replyAdd
@@ -516,7 +507,7 @@ class VideoHttp {
   // parent	num	父评论rpid	非必要	二级评论同根评论id 大于二级评论为要回复的评论id
   // message	str	发送评论内容	必要	最大1000字符
   // plat	num	发送平台标识	非必要	1：web端 2：安卓客户端  3：ios客户端  4：wp客户端
-  static Future replyAdd({
+  static Future<Map<String, dynamic>> replyAdd({
     required int type,
     required int oid,
     required String message,
@@ -546,14 +537,10 @@ class VideoHttp {
       data: data,
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future replyDel({
+  static Future<Map<String, dynamic>> replyDel({
     required int type, //replyType
     required int oid,
     required int rpid,
@@ -568,15 +555,11 @@ class VideoHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // 操作用户关系
-  static Future relationMod({
+  static Future<Map<String, dynamic>> relationMod({
     required int mid,
     required int act,
     required int reSrc,
@@ -610,7 +593,8 @@ class VideoHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
+    final body = asJsonMap(res.data);
+    if (responseCodeSuccess(body)) {
       if (act == 5) {
         // block
         Pref.setBlackMid(mid);
@@ -618,14 +602,13 @@ class VideoHttp {
         // unblock
         Pref.removeBlackMid(mid);
       }
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
+      return statusSuccess();
     }
+    return statusFailure(msg: responseMessage(body));
   }
 
-  static Future roomEntryAction({
-    roomId,
+  static Future<void> roomEntryAction({
+    Object? roomId,
   }) async {
     await Request().post(
       Api.roomEntryAction,
@@ -639,9 +622,9 @@ class VideoHttp {
     );
   }
 
-  static Future historyReport({
-    aid,
-    type,
+  static Future<void> historyReport({
+    Object? aid,
+    Object? type,
   }) async {
     await Request().post(
       Api.historyReport,
@@ -655,14 +638,14 @@ class VideoHttp {
   }
 
   // 视频播放进度
-  static Future heartBeat({
-    aid,
-    bvid,
-    cid,
-    progress,
-    epid,
-    seasonId,
-    subType,
+  static Future<void> heartBeat({
+    Object? aid,
+    Object? bvid,
+    Object? cid,
+    Object? progress,
+    Object? epid,
+    Object? seasonId,
+    Object? subType,
     required VideoType videoType,
   }) async {
     final isPugv = videoType == VideoType.pugv;
@@ -682,10 +665,10 @@ class VideoHttp {
     );
   }
 
-  static Future medialistHistory({
+  static Future<void> medialistHistory({
     required int desc,
-    required dynamic oid,
-    required dynamic upperMid,
+    required Object? oid,
+    required Object? upperMid,
   }) async {
     await Request().post(
       Api.mediaListHistory,
@@ -700,7 +683,7 @@ class VideoHttp {
   }
 
   // 添加追番
-  static Future pgcAdd({int? seasonId}) async {
+  static Future<Map<String, dynamic>> pgcAdd({int? seasonId}) async {
     var res = await Request().post(
       Api.pgcAdd,
       data: {
@@ -709,25 +692,16 @@ class VideoHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'msg': res.data['result'] == null
-            ? 'failed'
-            : res.data['result']['toast'],
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['result'] == null
-            ? 'failed'
-            : res.data['result']['toast'],
-      };
-    }
+    final body = asJsonMap(res.data);
+    return statusResultFromJsonBody(
+      body,
+      successMessage: _pgcToast,
+      errorMessage: _pgcToast,
+    );
   }
 
   // 取消追番
-  static Future pgcDel({int? seasonId}) async {
+  static Future<Map<String, dynamic>> pgcDel({int? seasonId}) async {
     var res = await Request().post(
       Api.pgcDel,
       data: {
@@ -736,24 +710,15 @@ class VideoHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'msg': res.data['result'] == null
-            ? 'failed'
-            : res.data['result']['toast'],
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['result'] == null
-            ? 'failed'
-            : res.data['result']['toast'],
-      };
-    }
+    final body = asJsonMap(res.data);
+    return statusResultFromJsonBody(
+      body,
+      successMessage: _pgcToast,
+      errorMessage: _pgcToast,
+    );
   }
 
-  static Future pgcUpdate({
+  static Future<Map<String, dynamic>> pgcUpdate({
     required String seasonId,
     required int status,
   }) async {
@@ -768,16 +733,18 @@ class VideoHttp {
         contentType: Headers.formUrlEncodedContentType,
       ),
     );
-    return {
-      'status': res.data['code'] == 0,
-      'msg': res.data['result'] == null
-          ? 'failed'
-          : res.data['result']['toast'],
-    };
+    final body = asJsonMap(res.data);
+    return responseCodeSuccess(body)
+        ? statusSuccess(msg: _pgcToast(body))
+        : statusFailure(msg: _pgcToast(body));
   }
 
   // 查看视频同时在看人数
-  static Future onlineTotal({int? aid, String? bvid, int? cid}) async {
+  static Future<Map<String, dynamic>> onlineTotal({
+    int? aid,
+    String? bvid,
+    int? cid,
+  }) async {
     var res = await Request().get(
       Api.onlineTotal,
       queryParameters: {
@@ -786,14 +753,13 @@ class VideoHttp {
         'cid': cid,
       },
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']['total']};
-    } else {
-      return {'status': false, 'data': null, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonBody(
+      asJsonMap(res.data),
+      parser: (body) => body['data']['total'],
+    );
   }
 
-  static Future aiConclusion({
+  static Future<Map<String, dynamic>> aiConclusion({
     String? bvid,
     int? cid,
     int? upMid,
@@ -804,24 +770,26 @@ class VideoHttp {
       'up_mid': upMid,
     });
     var res = await Request().get(Api.aiConclusion, queryParameters: params);
-    final code = res.data['code'];
-    final dataCode = res.data['data']?['code'];
+    final body = asJsonMap(res.data);
+    final code = body['code'];
+    final dataCode = body['data']?['code'];
     if (code == 0 && dataCode == 0) {
-      return {
-        'status': true,
-        'data': AiConclusionData.fromJson(res.data['data']),
-      };
-    } else {
-      final handling = code == 0 && dataCode == 1;
-      return {
-        'status': false,
-        'msg': res.data['message'],
-        'handling': handling,
-      };
+      return statusSuccess(
+        data: AiConclusionData.fromJson(body['data']),
+      );
     }
+    final handling = code == 0 && dataCode == 1;
+    return statusFailure(
+      msg: responseMessage(body),
+      extra: {'handling': handling},
+    );
   }
 
-  static Future playInfo({String? aid, String? bvid, required int cid}) async {
+  static Future<Map<String, dynamic>> playInfo({
+    String? aid,
+    String? bvid,
+    required int cid,
+  }) async {
     assert(aid != null || bvid != null);
     var res = await Request().get(
       Api.playInfo,
@@ -831,14 +799,10 @@ class VideoHttp {
         'cid': cid,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': PlayInfoData.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PlayInfoData.fromJson(data),
+    );
   }
 
   static Future<String?> vttSubtitles(String subtitleUrl) async {
@@ -908,7 +872,7 @@ class VideoHttp {
   }
 
   // pgc 排行
-  static Future<LoadingState> pgcRankList({
+  static Future<LoadingState<List<PgcRankItemModel>?>> pgcRankList({
     int day = 3,
     required int seasonType,
   }) async {
@@ -919,19 +883,16 @@ class VideoHttp {
         'season_type': seasonType,
       }),
     );
-    if (res.data['code'] == 0) {
-      return Success(
-        (res.data['result']?['list'] as List?)
-            ?.map((e) => PgcRankItemModel.fromJson(e))
-            .toList(),
-      );
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonBody(
+      asJsonMap(res.data),
+      parser: (body) => (body['result']?['list'] as List?)
+          ?.map((e) => PgcRankItemModel.fromJson(e))
+          .toList(),
+    );
   }
 
   // pgc season 排行
-  static Future<LoadingState> pgcSeasonRankList({
+  static Future<LoadingState<List<PgcRankItemModel>?>> pgcSeasonRankList({
     int day = 3,
     required int seasonType,
   }) async {
@@ -942,20 +903,17 @@ class VideoHttp {
         'season_type': seasonType,
       }),
     );
-    if (res.data['code'] == 0) {
-      return Success(
-        (res.data['data']?['list'] as List?)
-            ?.map((e) => PgcRankItemModel.fromJson(e))
-            .toList(),
-      );
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonBody(
+      asJsonMap(res.data),
+      parser: (body) => (body['data']?['list'] as List?)
+          ?.map((e) => PgcRankItemModel.fromJson(e))
+          .toList(),
+    );
   }
 
   static Future<LoadingState<VideoNoteData>> getVideoNoteList({
-    dynamic oid,
-    dynamic uperMid,
+    Object? oid,
+    Object? uperMid,
     required int page,
   }) async {
     var res = await Request().get(
@@ -969,10 +927,9 @@ class VideoHttp {
         'uper_mid': ?uperMid,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(VideoNoteData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => VideoNoteData.fromJson(data),
+    );
   }
 }

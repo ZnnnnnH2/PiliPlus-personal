@@ -117,18 +117,17 @@ class _PlDanmakuState extends State<PlDanmaku> {
             );
           } catch (_) {}
         } else {
+          final Color color = (playerController.blockTypes.contains(6)
+                  ? Colors.white
+                  : DmUtils.decimalToColor(e.color))
+              .withValues(alpha: playerController.danmakuOpacity);
           _controller!.addDanmaku(
             DanmakuContentItem(
               e.content,
-              color: playerController.blockTypes.contains(6)
-                  ? Colors.white
-                  : DmUtils.decimalToColor(e.color),
+              color: color,
               type: DmUtils.getPosition(e.mode),
-              isColorful:
-                  playerController.showVipDanmaku &&
-                      e.colorful == DmColorfulType.VipGradualColor
-                  ? true
-                  : null,
+              isColorful: playerController.showVipDanmaku &&
+                  e.colorful == DmColorfulType.VipGradualColor,
               count: e.hasCount() ? e.count : null,
               selfSend: e.isSelf,
             ),
@@ -153,27 +152,31 @@ class _PlDanmakuState extends State<PlDanmaku> {
       () => AnimatedOpacity(
         opacity: playerController.enableShowDanmaku.value ? 1 : 0,
         duration: const Duration(milliseconds: 100),
-        child: DanmakuScreen(
-          createdController: (DanmakuController e) {
-            playerController.danmakuController = _controller = e;
+        child: LayoutBuilder(
+          builder: (BuildContext context, BoxConstraints constraints) {
+            return DanmakuScreen(
+              createdController: (DanmakuController e) {
+                playerController.danmakuController = _controller = e;
+              },
+              size: constraints.biggest,
+              option: DanmakuOption(
+                fontSize: _fontSize,
+                fontWeight: playerController.fontWeight,
+                area: playerController.showArea,
+                hideTop: playerController.blockTypes.contains(5),
+                hideScroll: playerController.blockTypes.contains(2),
+                hideBottom: playerController.blockTypes.contains(4),
+                duration:
+                    playerController.danmakuDuration /
+                    playerController.playbackSpeed,
+                staticDuration:
+                    playerController.danmakuStaticDuration /
+                    playerController.playbackSpeed,
+                strokeWidth: playerController.strokeWidth,
+                lineHeight: playerController.danmakuLineHeight,
+              ),
+            );
           },
-          option: DanmakuOption(
-            fontSize: _fontSize,
-            fontWeight: playerController.fontWeight,
-            area: playerController.showArea,
-            opacity: playerController.danmakuOpacity,
-            hideTop: playerController.blockTypes.contains(5),
-            hideScroll: playerController.blockTypes.contains(2),
-            hideBottom: playerController.blockTypes.contains(4),
-            duration:
-                playerController.danmakuDuration /
-                playerController.playbackSpeed,
-            staticDuration:
-                playerController.danmakuStaticDuration /
-                playerController.playbackSpeed,
-            strokeWidth: playerController.strokeWidth,
-            lineHeight: playerController.danmakuLineHeight,
-          ),
         ),
       ),
     );

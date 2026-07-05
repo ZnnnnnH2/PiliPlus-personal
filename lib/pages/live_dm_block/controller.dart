@@ -31,6 +31,13 @@ class LiveDmBlockController extends GetxController
   final RxList<String> keywordList = <String>[].obs;
   final RxList<ShieldUserList> shieldUserList = <ShieldUserList>[].obs;
 
+  void _showResultError(Map<String, dynamic> result) {
+    final message = result['msg']?.toString();
+    if (message?.isNotEmpty == true) {
+      SmartDialog.showToast(message!);
+    }
+  }
+
   void updateValue() {
     isEnable.value = level.value != 0 || rank.value != 0 || verify.value != 0;
   }
@@ -61,7 +68,7 @@ class LiveDmBlockController extends GetxController
     int level, {
     VoidCallback? onError,
   }) async {
-    var res = await LiveHttp.liveSetSilent(type: type.name, level: level);
+    final res = await LiveHttp.liveSetSilent(type: type.name, level: level);
     if (res['status']) {
       switch (type) {
         case LiveDmSilentType.level:
@@ -73,11 +80,10 @@ class LiveDmBlockController extends GetxController
       }
       updateValue();
       return true;
-    } else {
-      onError?.call();
-      SmartDialog.showToast(res['msg']);
-      return false;
     }
+    onError?.call();
+    _showResultError(res);
+    return false;
   }
 
   Future<void> setEnable(bool enable) async {
@@ -106,14 +112,14 @@ class LiveDmBlockController extends GetxController
 
   Future<void> addShieldKeyword(bool isKeyword, String value) async {
     if (isKeyword) {
-      var res = await LiveHttp.addShieldKeyword(keyword: value);
+      final res = await LiveHttp.addShieldKeyword(keyword: value);
       if (res['status']) {
         keywordList.insert(0, value);
       } else {
-        SmartDialog.showToast(res['msg']);
+        _showResultError(res);
       }
     } else {
-      var res = await LiveHttp.liveShieldUser(
+      final res = await LiveHttp.liveShieldUser(
         uid: value,
         roomid: roomId,
         type: 1,
@@ -127,14 +133,14 @@ class LiveDmBlockController extends GetxController
           ),
         );
       } else {
-        SmartDialog.showToast(res['msg']);
+        _showResultError(res);
       }
     }
   }
 
   Future<void> onRemove(int index, dynamic item) async {
     if (item is ShieldUserList) {
-      var res = await LiveHttp.liveShieldUser(
+      final res = await LiveHttp.liveShieldUser(
         uid: item.uid,
         roomid: roomId,
         type: 0,
@@ -142,14 +148,14 @@ class LiveDmBlockController extends GetxController
       if (res['status']) {
         shieldUserList.removeAt(index);
       } else {
-        SmartDialog.showToast(res['msg']);
+        _showResultError(res);
       }
     } else {
-      var res = await LiveHttp.delShieldKeyword(keyword: item);
+      final res = await LiveHttp.delShieldKeyword(keyword: item);
       if (res['status']) {
         keywordList.removeAt(index);
       } else {
-        SmartDialog.showToast(res['msg']);
+        _showResultError(res);
       }
     }
   }

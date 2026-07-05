@@ -400,7 +400,9 @@ class UserHttp {
     }
   }
 
-  static Future spaceSettingMod(data) async {
+  static Future<Map<String, dynamic>> spaceSettingMod(
+    Map<String, dynamic> data,
+  ) async {
     final res = await Request().post(
       Api.spaceSettingMod,
       queryParameters: {
@@ -416,7 +418,7 @@ class UserHttp {
     }
   }
 
-  static Future vipExpAdd() async {
+  static Future<Map<String, dynamic>> vipExpAdd() async {
     final res = await Request().post(
       Api.vipExpAdd,
       queryParameters: {

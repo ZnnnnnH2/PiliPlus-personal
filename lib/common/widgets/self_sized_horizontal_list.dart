@@ -25,31 +25,56 @@ class SelfSizedHorizontalList extends StatefulWidget {
 
 class _SelfSizedHorizontalListState extends State<SelfSizedHorizontalList> {
   final infoKey = GlobalKey();
+  double? _height;
+  bool _measureScheduled = false;
 
-  double? prevHeight;
-  double? get height {
-    if (prevHeight != null) return prevHeight;
-    prevHeight = infoKey.globalPaintBounds?.height;
-    return prevHeight;
+  void _scheduleMeasure() {
+    if (_measureScheduled || !mounted || widget.itemCount == 0) {
+      return;
+    }
+    _measureScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _measureScheduled = false;
+      if (!mounted) {
+        return;
+      }
+      final nextHeight = infoKey.globalPaintBounds?.height;
+      if (nextHeight != null && nextHeight != _height) {
+        setState(() {
+          _height = nextHeight;
+        });
+      }
+    });
   }
 
-  bool get isInit => height == null;
+  void _invalidateHeight() {
+    _height = null;
+    _scheduleMeasure();
+  }
 
-  // @override
-  // void didUpdateWidget(SelfSizedHorizontalList oldWidget) {
-  //   super.didUpdateWidget(oldWidget);
-  //   if (BuildConfig.isDebug) {
-  //     prevHeight = null;
-  //   }
-  // }
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _invalidateHeight();
+  }
+
+  @override
+  void didUpdateWidget(SelfSizedHorizontalList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.itemCount != widget.itemCount ||
+        oldWidget.gapSize != widget.gapSize ||
+        oldWidget.padding != widget.padding) {
+      _invalidateHeight();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    if (height == null) {
-      WidgetsBinding.instance.addPostFrameCallback((v) => setState(() {}));
+    if (widget.itemCount == 0) {
+      return const SizedBox.shrink();
     }
-    if (widget.itemCount == 0) return const SizedBox.shrink();
-    if (isInit) {
+    if (_height == null) {
+      _scheduleMeasure();
       return Align(
         alignment: Alignment.centerLeft,
         child: Padding(
@@ -61,7 +86,7 @@ class _SelfSizedHorizontalListState extends State<SelfSizedHorizontalList> {
     }
 
     return SizedBox(
-      height: height,
+      height: _height,
       child: ListView.separated(
         controller: widget.controller,
         padding: widget.padding,

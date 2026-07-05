@@ -1,6 +1,7 @@
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/models/common/pgc_review_type.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_index_condition/data.dart';
 import 'package:PiliPlus/models_new/pgc/pgc_index_result/data.dart';
@@ -15,9 +16,9 @@ class PgcHttp {
   static Future<LoadingState<PgcIndexResult>> pgcIndexResult({
     required int page,
     required Map<String, dynamic> params,
-    seasonType,
-    type,
-    indexType,
+    int? seasonType,
+    int? type,
+    int? indexType,
   }) async {
     var res = await Request().get(
       Api.pgcIndexResult,
@@ -30,17 +31,16 @@ class PgcHttp {
         'pagesize': 21,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(PgcIndexResult.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PgcIndexResult.fromJson(data),
+    );
   }
 
   static Future<LoadingState<PgcIndexConditionData>> pgcIndexCondition({
-    seasonType,
-    type,
-    indexType,
+    int? seasonType,
+    int? type,
+    int? indexType,
   }) async {
     var res = await Request().get(
       Api.pgcIndexCondition,
@@ -50,11 +50,10 @@ class PgcHttp {
         'index_type': ?indexType,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(PgcIndexConditionData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PgcIndexConditionData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<List<PgcIndexItem>?>> pgcIndex({
@@ -68,11 +67,10 @@ class PgcHttp {
         'index_type': ?indexType,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(PgcIndexResult.fromJson(res.data['data']).list);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PgcIndexResult.fromJson(data).list,
+    );
   }
 
   static Future<LoadingState<List<TimelineResult>?>> pgcTimeline({
@@ -88,16 +86,15 @@ class PgcHttp {
         'after': after,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(PgcTimeline.fromJson(res.data).result);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonBody(
+      asJsonMap(res.data),
+      parser: (body) => PgcTimeline.fromJson(body).result,
+    );
   }
 
   static Future<LoadingState<PgcReviewData>> pgcReview({
     required PgcReviewType type,
-    required mediaId,
+    required Object? mediaId,
     int sort = 0,
     String? next,
   }) async {
@@ -111,16 +108,15 @@ class PgcHttp {
         'web_location': 666.19,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(PgcReviewData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => PgcReviewData.fromJson(data),
+    );
   }
 
-  static Future pgcReviewLike({
-    required mediaId,
-    required reviewId,
+  static Future<Map<String, dynamic>> pgcReviewLike({
+    required Object? mediaId,
+    required Object? reviewId,
   }) async {
     var res = await Request().post(
       Api.pgcReviewLike,
@@ -132,16 +128,12 @@ class PgcHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future pgcReviewDislike({
-    required mediaId,
-    required reviewId,
+  static Future<Map<String, dynamic>> pgcReviewDislike({
+    required Object? mediaId,
+    required Object? reviewId,
   }) async {
     var res = await Request().post(
       Api.pgcReviewDislike,
@@ -153,15 +145,11 @@ class PgcHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future pgcReviewPost({
-    required mediaId,
+  static Future<Map<String, dynamic>> pgcReviewPost({
+    required Object? mediaId,
     required int score,
     required String content,
     bool shareFeed = false,
@@ -177,18 +165,14 @@ class PgcHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future pgcReviewMod({
-    required mediaId,
+  static Future<Map<String, dynamic>> pgcReviewMod({
+    required Object? mediaId,
     required int score,
     required String content,
-    required reviewId,
+    required Object? reviewId,
   }) async {
     var res = await Request().post(
       Api.pgcReviewMod,
@@ -201,16 +185,12 @@ class PgcHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future pgcReviewDel({
-    required mediaId,
-    required reviewId,
+  static Future<Map<String, dynamic>> pgcReviewDel({
+    required Object? mediaId,
+    required Object? reviewId,
   }) async {
     var res = await Request().post(
       Api.pgcReviewDel,
@@ -221,10 +201,6 @@ class PgcHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 }

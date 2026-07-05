@@ -10,6 +10,7 @@ import 'package:PiliPlus/pages/setting/privacy_setting.dart';
 import 'package:PiliPlus/pages/setting/recommend_setting.dart';
 import 'package:PiliPlus/pages/setting/style_setting.dart';
 import 'package:PiliPlus/pages/setting/video_setting.dart';
+import 'package:PiliPlus/pages/setting/widgets/item_style.dart';
 import 'package:PiliPlus/pages/setting/widgets/multi_select_dialog.dart';
 import 'package:PiliPlus/pages/webdav/view.dart';
 import 'package:PiliPlus/utils/accounts.dart';
@@ -164,12 +165,18 @@ class _SettingPageState extends State<SettingPage> {
     }
   }
 
+  Widget _buildSettingItem(ThemeData theme, _SettingsModel item) => ListTile(
+    tileColor: _getTileColor(theme, item.type),
+    onTap: () => _toPage(item.type),
+    leading: Icon(item.icon),
+    title: Text(item.type.title, style: settingTitleStyle(theme)),
+    subtitle: item.subtitle == null
+        ? null
+        : Text(item.subtitle!, style: settingSubtitleStyle(theme)),
+  );
+
   Widget _buildList(ThemeData theme) {
     final padding = MediaQuery.viewPaddingOf(context);
-    TextStyle titleStyle = theme.textTheme.titleMedium!;
-    TextStyle subTitleStyle = theme.textTheme.labelMedium!.copyWith(
-      color: theme.colorScheme.outline,
-    );
     return ListView(
       padding: EdgeInsets.only(bottom: padding.bottom + 100),
       children: [
@@ -177,20 +184,12 @@ class _SettingPageState extends State<SettingPage> {
         ..._items
             .sublist(0, _items.length - 1)
             .map(
-              (item) => ListTile(
-                tileColor: _getTileColor(theme, item.type),
-                onTap: () => _toPage(item.type),
-                leading: Icon(item.icon),
-                title: Text(item.type.title, style: titleStyle),
-                subtitle: item.subtitle == null
-                    ? null
-                    : Text(item.subtitle!, style: subTitleStyle),
-              ),
+              (item) => _buildSettingItem(theme, item),
             ),
         ListTile(
           onTap: () => LoginPageController.switchAccountDialog(context),
           leading: const Icon(Icons.switch_account_outlined),
-          title: Text('设置账号模式', style: titleStyle),
+          title: Text('设置账号模式', style: settingTitleStyle(theme)),
         ),
         Obx(
           () => _noAccount.value
@@ -198,15 +197,10 @@ class _SettingPageState extends State<SettingPage> {
               : ListTile(
                   leading: const Icon(Icons.logout_outlined),
                   onTap: () => _logoutDialog(context),
-                  title: Text('退出登录', style: titleStyle),
+                  title: Text('退出登录', style: settingTitleStyle(theme)),
                 ),
         ),
-        ListTile(
-          tileColor: _getTileColor(theme, _items.last.type),
-          onTap: () => _toPage(_items.last.type),
-          leading: Icon(_items.last.icon),
-          title: Text(_items.last.type.title, style: titleStyle),
-        ),
+        _buildSettingItem(theme, _items.last),
       ],
     );
   }

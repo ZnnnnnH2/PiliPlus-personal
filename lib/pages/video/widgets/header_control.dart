@@ -1368,11 +1368,7 @@ class HeaderControlState extends TripleState<HeaderControl> {
         void updateOpacity(double val) {
           opacity = val;
           setState(() {});
-          try {
-            danmakuController?.updateOption(
-              danmakuController.option.copyWith(opacity: val),
-            );
-          } catch (_) {}
+          danmakuController?.clear();
         }
 
         void updateShowArea(double val) {

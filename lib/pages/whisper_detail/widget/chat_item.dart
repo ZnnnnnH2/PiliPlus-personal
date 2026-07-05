@@ -594,7 +594,7 @@ class ChatItem extends StatelessWidget {
     );
   }
 
-  Widget msgTypePic_2(content) {
+  Widget msgTypePic_2(dynamic content) {
     final url = content['url'];
     return GestureDetector(
       onTap: () => PageUtils.imageView(imgList: [SourceModel(url: url)]),
@@ -609,7 +609,7 @@ class ChatItem extends StatelessWidget {
     );
   }
 
-  Widget msgTypeTipMessage_18(ThemeData theme, content) {
+  Widget msgTypeTipMessage_18(ThemeData theme, dynamic content) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
       child: Text(

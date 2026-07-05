@@ -490,7 +490,11 @@ class Text extends StatelessWidget {
       EnumProperty<TextOverflow>('overflow', overflow, defaultValue: null),
     );
     properties.add(
-      DoubleProperty('textScaleFactor', textScaleFactor, defaultValue: null),
+      DiagnosticsProperty<TextScaler>(
+        'textScaler',
+        this.textScaler,
+        defaultValue: null,
+      ),
     );
     properties.add(IntProperty('maxLines', maxLines, defaultValue: null));
     properties.add(

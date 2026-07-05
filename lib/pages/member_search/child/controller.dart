@@ -14,39 +14,35 @@ class MemberSearchChildController extends CommonListController {
 
   dynamic offset;
 
+  int get _totalCount => controller.counts[searchType.index];
+
+  set _totalCount(int value) => controller.counts[searchType.index] = value;
+
   @override
   void checkIsEnd(int length) {
-    switch (searchType) {
-      case MemberSearchType.archive:
-        if (controller.counts.first != -1 &&
-            length >= controller.counts.first) {
-          isEnd = true;
-        }
-        break;
-      case MemberSearchType.dynamic:
-        if (controller.counts[1] != -1 && length >= controller.counts[1]) {
-          isEnd = true;
-        }
-        break;
+    if (_totalCount != -1 && length >= _totalCount) {
+      isEnd = true;
     }
   }
 
   @override
-  List? getDataList(response) {
-    switch (searchType) {
-      case MemberSearchType.archive:
-        SearchArchiveData data = response;
-        controller.counts[searchType.index] = data.page?.count ?? 0;
-        return data.list?.vlist;
-      case MemberSearchType.dynamic:
-        DynamicsDataModel data = response;
-        offset = data.offset;
-        if (data.hasMore == false) {
-          isEnd = true;
-        }
-        controller.counts[searchType.index] = data.total ?? 0;
-        return data.items;
+  List? getDataList(response) => switch (searchType) {
+    MemberSearchType.archive => _getArchiveList(response as SearchArchiveData),
+    MemberSearchType.dynamic => _getDynamicList(response as DynamicsDataModel),
+  };
+
+  List? _getArchiveList(SearchArchiveData data) {
+    _totalCount = data.page?.count ?? 0;
+    return data.list?.vlist;
+  }
+
+  List? _getDynamicList(DynamicsDataModel data) {
+    offset = data.offset;
+    if (data.hasMore == false) {
+      isEnd = true;
     }
+    _totalCount = data.total ?? 0;
+    return data.items;
   }
 
   @override

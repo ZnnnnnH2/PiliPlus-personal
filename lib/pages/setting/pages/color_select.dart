@@ -4,6 +4,7 @@ import 'package:PiliPlus/models/common/theme/theme_color_type.dart';
 import 'package:PiliPlus/models/common/theme/theme_type.dart';
 import 'package:PiliPlus/pages/home/view.dart';
 import 'package:PiliPlus/pages/mine/controller.dart';
+import 'package:PiliPlus/pages/setting/widgets/item_style.dart';
 import 'package:PiliPlus/pages/setting/widgets/select_dialog.dart';
 import 'package:PiliPlus/utils/storage.dart';
 import 'package:PiliPlus/utils/storage_key.dart';
@@ -20,27 +21,6 @@ class ColorSelectPage extends StatefulWidget {
   State<ColorSelectPage> createState() => _ColorSelectPageState();
 }
 
-class Item {
-  Item({
-    required this.expandedValue,
-    required this.headerValue,
-    this.isExpanded = false,
-  });
-
-  String expandedValue;
-  String headerValue;
-  bool isExpanded;
-}
-
-List<Item> generateItems(int count) {
-  return List<Item>.generate(count, (int index) {
-    return Item(
-      headerValue: 'Panel $index',
-      expandedValue: 'This is item number $index',
-    );
-  });
-}
-
 class _ColorSelectPageState extends State<ColorSelectPage> {
   final ColorSelectController ctr = Get.put(ColorSelectController());
   FlexSchemeVariant _dynamicSchemeVariant =
@@ -49,10 +29,8 @@ class _ColorSelectPageState extends State<ColorSelectPage> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    TextStyle titleStyle = theme.textTheme.titleMedium!;
-    TextStyle subTitleStyle = theme.textTheme.labelMedium!.copyWith(
-      color: theme.colorScheme.outline,
-    );
+    final titleStyle = settingTitleStyle(theme);
+    final subTitleStyle = settingSubtitleStyle(theme);
     final size = MediaQuery.sizeOf(context);
     final padding = MediaQuery.viewPaddingOf(
       context,

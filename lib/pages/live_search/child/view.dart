@@ -29,11 +29,12 @@ class LiveSearchChildPage extends StatefulWidget {
 class _LiveSearchChildPageState extends State<LiveSearchChildPage>
     with AutomaticKeepAliveClientMixin {
   LiveSearchChildController get _controller => widget.controller;
+  LiveSearchType get _searchType => widget.searchType;
 
   @override
   Widget build(BuildContext context) {
     super.build(context);
-    double padding = widget.searchType == LiveSearchType.room ? 12 : 0;
+    final padding = _searchType == LiveSearchType.room ? 12.0 : 0.0;
     return refreshIndicator(
       onRefresh: _controller.onRefresh,
       child: CustomScrollView(
@@ -54,7 +55,7 @@ class _LiveSearchChildPageState extends State<LiveSearchChildPage>
   }
 
   Widget get _buildLoading {
-    return switch (widget.searchType) {
+    return switch (_searchType) {
       LiveSearchType.room => SliverGrid.builder(
         gridDelegate: roomDelegate,
         itemBuilder: (context, index) => const VideoCardVSkeleton(),
@@ -81,40 +82,42 @@ class _LiveSearchChildPageState extends State<LiveSearchChildPage>
     mainAxisExtent: 60,
   );
 
+  void _loadMoreOnLastItem(int index, int length) {
+    if (index == length - 1) {
+      _controller.onLoadMore();
+    }
+  }
+
+  Widget _buildRoomGrid(List response) => SliverGrid.builder(
+    gridDelegate: roomDelegate,
+    itemBuilder: (context, index) {
+      _loadMoreOnLastItem(index, response.length);
+      return LiveCardVSearch(item: response[index]);
+    },
+    itemCount: response.length,
+  );
+
+  Widget _buildUserGrid(List response) => SliverGrid.builder(
+    gridDelegate: userDelegate,
+    itemBuilder: (context, index) {
+      _loadMoreOnLastItem(index, response.length);
+      return LiveSearchUserItem(item: response[index]);
+    },
+    itemCount: response.length,
+  );
+
+  Widget _buildSuccessBody(List response) => switch (_searchType) {
+    LiveSearchType.room => _buildRoomGrid(response),
+    LiveSearchType.user => _buildUserGrid(response),
+  };
+
   Widget _buildBody(LoadingState<List?> loadingState) {
     return switch (loadingState) {
       Loading() => _buildLoading,
       Success(:var response) =>
         response?.isNotEmpty == true
             ? Builder(
-                builder: (context) {
-                  return switch (widget.searchType) {
-                    LiveSearchType.room => SliverGrid.builder(
-                      gridDelegate: roomDelegate,
-                      itemBuilder: (context, index) {
-                        if (index == response.length - 1) {
-                          _controller.onLoadMore();
-                        }
-                        return LiveCardVSearch(
-                          item: response[index],
-                        );
-                      },
-                      itemCount: response!.length,
-                    ),
-                    LiveSearchType.user => SliverGrid.builder(
-                      gridDelegate: userDelegate,
-                      itemBuilder: (context, index) {
-                        if (index == response.length - 1) {
-                          _controller.onLoadMore();
-                        }
-                        return LiveSearchUserItem(
-                          item: response[index],
-                        );
-                      },
-                      itemCount: response!.length,
-                    ),
-                  };
-                },
+                builder: (context) => _buildSuccessBody(response!),
               )
             : HttpError(onReload: _controller.onReload),
       Error(:var errMsg) => HttpError(

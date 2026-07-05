@@ -6,6 +6,7 @@ import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/constants.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/http/ua_type.dart';
 import 'package:PiliPlus/models/common/member/contribute_type.dart';
 import 'package:PiliPlus/models/dynamics/result.dart';
@@ -32,8 +33,8 @@ import 'package:PiliPlus/utils/wbi_sign.dart';
 import 'package:dio/dio.dart';
 
 class MemberHttp {
-  static Future reportMember(
-    dynamic mid, {
+  static Future<Map<String, dynamic>> reportMember(
+    Object? mid, {
     String? reason,
     int? reasonV2,
   }) async {
@@ -80,11 +81,10 @@ class MemberHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return Success(SpaceArticleData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => SpaceArticleData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<SpaceSsData>> seasonSeriesList({
@@ -99,13 +99,11 @@ class MemberHttp {
         'page_size': 10,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(
-        SpaceSsData.fromJson(res.data['data']?['items_lists'] ?? {}),
-      );
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonBody(
+      asJsonMap(res.data),
+      parser: (body) =>
+          SpaceSsData.fromJson(body['data']?['items_lists'] ?? {}),
+    );
   }
 
   static Future<LoadingState<SpaceArchiveData>> spaceArchive({
@@ -158,16 +156,15 @@ class MemberHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return Success(SpaceArchiveData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => SpaceArchiveData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<SpaceAudioData>> spaceAudio({
     required int page,
-    required mid,
+    required Object? mid,
   }) async {
     var res = await Request().get(
       Api.spaceAudio,
@@ -179,16 +176,15 @@ class MemberHttp {
         'web_location': 333.1387,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(SpaceAudioData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => SpaceAudioData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<SpaceCheeseData>> spaceCheese({
     required int page,
-    required mid,
+    required Object? mid,
   }) async {
     var res = await Request().get(
       Api.spaceCheese,
@@ -199,23 +195,22 @@ class MemberHttp {
         'web_location': 333.1387,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(SpaceCheeseData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => SpaceCheeseData.fromJson(data),
+    );
   }
 
-  static Future<LoadingState> spaceStory({
-    required mid,
-    required aid,
-    required beforeSize,
-    required afterSize,
-    required cid,
-    required contain,
-    required index,
+  static Future<LoadingState<dynamic>> spaceStory({
+    required Object? mid,
+    required Object? aid,
+    required Object? beforeSize,
+    required Object? afterSize,
+    required Object? cid,
+    required Object? contain,
+    required Object? index,
   }) async {
-    final params = {
+    final Map<String, dynamic> params = {
       'aid': aid,
       'before_size': beforeSize,
       'after_size': afterSize,
@@ -242,11 +237,10 @@ class MemberHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return Success(res.data['data']);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => data,
+    );
   }
 
   static Future<LoadingState<SpaceData>> space({
@@ -275,14 +269,13 @@ class MemberHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return Success(SpaceData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => SpaceData.fromJson(data),
+    );
   }
 
-  static Future memberInfo({
+  static Future<Map<String, dynamic>> memberInfo({
     int? mid,
     String token = '',
   }) async {
@@ -309,26 +302,18 @@ class MemberHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': MemberInfoModel.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => MemberInfoModel.fromJson(data),
+    );
   }
 
-  static Future memberStat({int? mid}) async {
+  static Future<Map<String, dynamic>> memberStat({int? mid}) async {
     var res = await Request().get(Api.userStat, queryParameters: {'vmid': mid});
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future memberCardInfo({int? mid}) async {
+  static Future<Map<String, dynamic>> memberCardInfo({int? mid}) async {
     var res = await Request().get(
       Api.memberCardInfo,
       queryParameters: {
@@ -336,18 +321,14 @@ class MemberHttp {
         'photo': false,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': MemberCardInfoData.fromJson(res.data['data']),
-      };
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => MemberCardInfoData.fromJson(data),
+    );
   }
 
   static Future<LoadingState<SearchArchiveData>> searchArchive({
-    required mid,
+    required Object? mid,
     int ps = 30,
     int tid = 0,
     int? pn,
@@ -383,14 +364,14 @@ class MemberHttp {
         },
       ),
     );
-    if (res.data['code'] == 0) {
-      return Success(SearchArchiveData.fromJson(res.data['data']));
-    } else {
-      Map errMap = const {
-        -352: '风控校验失败，请检查登录状态',
-      };
-      return Error(errMap[res.data['code']] ?? res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => SearchArchiveData.fromJson(data),
+      errorMessage: (body) {
+        const errMap = {-352: '风控校验失败，请检查登录状态'};
+        return errMap[body['code']] ?? responseMessage(body);
+      },
+    );
   }
 
   // 用户动态
@@ -415,26 +396,24 @@ class MemberHttp {
       'x-bili-web-req-json': jsonEncode({"spm_id": "333.999"}),
     });
     var res = await Request().get(Api.memberDynamic, queryParameters: params);
-    if (res.data['code'] == 0) {
+    final body = asJsonMap(res.data);
+    if (responseCodeSuccess(body)) {
       try {
-        DynamicsDataModel data = DynamicsDataModel.fromJson(res.data['data']);
+        final data = DynamicsDataModel.fromJson(body['data']);
         return Success(data);
       } catch (err) {
         return Error(err.toString());
       }
-    } else {
-      Map errMap = const {
-        -352: '风控校验失败，请检查登录状态',
-      };
-      return Error(errMap[res.data['code']] ?? res.data['message']);
     }
+    const errMap = {-352: '风控校验失败，请检查登录状态'};
+    return Error(errMap[body['code']] ?? responseMessage(body));
   }
 
   // 搜索用户动态
-  static Future memberDynamicSearch({
+  static Future<Map<String, dynamic>> memberDynamicSearch({
     required int pn,
-    required dynamic mid,
-    required dynamic offset,
+    required Object? mid,
+    required Object? offset,
     required String keyword,
   }) async {
     var res = await Request().get(
@@ -448,23 +427,16 @@ class MemberHttp {
         'web_location': 333.1387,
       },
     );
-    if (res.data['code'] == 0) {
-      return {
-        'status': true,
-        'data': DynamicsDataModel.fromJson(res.data['data']),
-      };
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => DynamicsDataModel.fromJson(data),
+    );
   }
 
   static Future<LoadingState<DynamicsDataModel>> dynSearch({
     required int pn,
-    required dynamic mid,
-    required dynamic offset,
+    required Object? mid,
+    required Object? offset,
     required String keyword,
   }) async {
     var res = await Request().get(
@@ -478,28 +450,23 @@ class MemberHttp {
         'web_location': 333.1387,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(DynamicsDataModel.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => DynamicsDataModel.fromJson(data),
+    );
   }
 
   // 查询分组
   static Future<LoadingState<List<MemberTagItemModel>>> followUpTags() async {
     var res = await Request().get(Api.followUpTag);
-    if (res.data['code'] == 0) {
-      return Success(
-        (res.data['data'] as List)
-            .map((e) => MemberTagItemModel.fromJson(e))
-            .toList(),
-      );
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) =>
+          (data as List).map((e) => MemberTagItemModel.fromJson(e)).toList(),
+    );
   }
 
-  static Future specialAction({
+  static Future<Map<String, dynamic>> specialAction({
     int? fid,
     bool isAdd = true,
   }) async {
@@ -511,18 +478,14 @@ class MemberHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {
-        'status': false,
-        'msg': res.data['message'],
-      };
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // 设置分组
-  static Future addUsers(String fids, String tagids) async {
+  static Future<Map<String, dynamic>> addUsers(
+    String fids,
+    String tagids,
+  ) async {
     var res = await Request().post(
       Api.addUsers,
       queryParameters: {
@@ -575,7 +538,7 @@ class MemberHttp {
     }
   }
 
-  static Future createFollowTag(tagName) async {
+  static Future<Map<String, dynamic>> createFollowTag(String tagName) async {
     var res = await Request().post(
       Api.createFollowTag,
       queryParameters: {
@@ -595,7 +558,10 @@ class MemberHttp {
     }
   }
 
-  static Future updateFollowTag(tagid, name) async {
+  static Future<Map<String, dynamic>> updateFollowTag(
+    Object? tagid,
+    String name,
+  ) async {
     var res = await Request().post(
       Api.updateFollowTag,
       queryParameters: {
@@ -616,7 +582,7 @@ class MemberHttp {
     }
   }
 
-  static Future delFollowTag(tagid) async {
+  static Future<Map<String, dynamic>> delFollowTag(Object? tagid) async {
     var res = await Request().post(
       Api.delFollowTag,
       queryParameters: {
@@ -637,7 +603,7 @@ class MemberHttp {
   }
 
   // 获取up置顶
-  static Future getTopVideo(String? vmid) async {
+  static Future<Map<String, dynamic>> getTopVideo(String? vmid) async {
     var res = await Request().get(Api.getTopVideoApi);
     if (res.data['code'] == 0) {
       return {
@@ -721,7 +687,7 @@ class MemberHttp {
   }
 
   static Future<LoadingState<UpowerRankData>> upowerRank({
-    required upMid,
+    required Object? upMid,
     required int page,
     int? privilegeType,
   }) async {

@@ -23,3 +23,13 @@
 - 起因：需要在当前脏工作区里高质量推进“整理代码、优化性能”，但同时避开播放器、设置页等高冲突区域，先形成可执行且低风险的设计。
 - 操作：阅读 `search` 页面与 controller、`cache_manage.dart`、`about/view.dart`、`self_sized_horizontal_list.dart` 的现状实现，结合仓库结构与已有未提交修改，输出聚焦搜索链路、缓存 IO 和通用小组件的设计文档，并写入 `docs/superpowers/specs/2026-04-10-search-cache-cleanup-design.md`。
 - 结果：本轮优化的范围、数据流、异常处理、验证方案与回滚边界已经固化为仓库内 spec，可在用户复核后按文档进入实现。
+
+### 2. 搜索、缓存与测量组件实现
+- 起因：用户确认设计通过，进入实现阶段，需要在低冲突范围内落地搜索状态整理、缓存 IO 优化与通用横向列表组件稳定性修复。
+- 操作：重构 `lib/pages/search/controller.dart`，统一搜索关键词 trim、历史记录归一化/持久化与建议请求过期保护；整理 `lib/pages/search/view.dart`，让页面层改为调用 controller 暴露的方法，并补上页面销毁时的 controller 清理；重写 `lib/utils/cache_manage.dart` 的目录遍历与删除路径，改为异步 `list`/`delete` 流程并统一桌面端缓存路径 helper；为 `lib/pages/about/view.dart` 增加缓存大小刷新 request id 保护，避免异步旧结果回写；更新 `lib/common/widgets/self_sized_horizontal_list.dart`，用单次调度测量与生命周期失效重测替代原先反复 post-frame `setState` 的方式；最后使用 `git diff --check` 做 patch 级检查，并人工复核目标文件 diff。
+- 结果：目标范围内的状态边界、异步正确性与 IO 方式已完成整理，搜索建议能丢弃过期响应，缓存统计/清理路径更可控，横向列表组件减少无意义重建；当前环境未找到可用的 Flutter/Dart SDK，因此本轮未能执行 `dart format` 与 `flutter analyze`，需在具备 SDK 的环境下补跑。
+
+### 3. Flutter 版本迁移起步
+- 起因：用户要求立即将仓库迁移到最新 Flutter stable 线，并尝试通过 Scoop 安装最新 SDK。
+- 操作：先核对仓库当前 pin、CI 工作流与工具链状态；确认 `pubspec.yaml` 之前固定在 `3.35.3`，CI 通过 `flutter-version-file` 跟随 `pubspec.yaml`；参考 Flutter 官方文档当前反映的 stable 版本后，将仓库 pin 更新为 `3.41.5`，并同步更新 `AGENTS.md` 中的版本说明；同时检查 Scoop 状态，发现 `flutter` 安装持续处于 `Install failed`，重新执行安装后仍因大体积下载超时而未获得可用 SDK。
+- 结果：仓库侧的 Flutter 目标版本已切换到 `3.41.5`，CI 将随 `pubspec.yaml` 选择新版本；但本机 SDK 仍未安装完成，`pubspec.lock`、`flutter pub get`、`flutter analyze` 与测试验证暂时无法完成，需要待工具链安装成功后继续。

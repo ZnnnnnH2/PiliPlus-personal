@@ -9,9 +9,6 @@ import 'package:PiliPlus/pages/search/controller.dart';
 import 'package:PiliPlus/pages/search/widgets/hot_keyword.dart';
 import 'package:PiliPlus/pages/search/widgets/search_text.dart';
 import 'package:PiliPlus/utils/em.dart' show Em;
-import 'package:PiliPlus/utils/extension.dart';
-import 'package:PiliPlus/utils/storage.dart';
-import 'package:PiliPlus/utils/storage_key.dart';
 import 'package:PiliPlus/utils/utils.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
@@ -32,6 +29,14 @@ class _SearchPageState extends State<SearchPage> {
   );
 
   @override
+  void dispose() {
+    if (Get.isRegistered<SSearchController>(tag: _tag)) {
+      Get.delete<SSearchController>(tag: _tag);
+    }
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final isPortrait = MediaQuery.sizeOf(context).isPortrait;
@@ -50,7 +55,7 @@ class _SearchPageState extends State<SearchPage> {
                     tooltip: 'UID搜索用户',
                     icon: const Icon(Icons.person_outline, size: 22),
                     onPressed: () => Get.toNamed(
-                      '/member?mid=${_searchController.controller.text}',
+                      '/member?mid=${_searchController.currentKeyword}',
                     ),
                   )
                 : const SizedBox.shrink(),
@@ -100,49 +105,54 @@ class _SearchPageState extends State<SearchPage> {
 
   Widget _searchSuggest() {
     return Obx(
-      () =>
-          _searchController.searchSuggestList.isNotEmpty &&
-              _searchController.searchSuggestList.first.term != null &&
-              _searchController.controller.text != ''
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: _searchController.searchSuggestList
-                  .map(
-                    (item) => InkWell(
-                      borderRadius: const BorderRadius.all(Radius.circular(4)),
-                      onTap: () => _searchController.onClickKeyword(item.term!),
-                      child: Padding(
-                        padding: const EdgeInsets.only(
-                          left: 20,
-                          top: 9,
-                          bottom: 9,
-                        ),
-                        child: Text.rich(
-                          TextSpan(
-                            children: Em.regTitle(item.textRich)
-                                .map(
-                                  (e) => TextSpan(
-                                    text: e.text,
-                                    style: e.isEm
-                                        ? TextStyle(
-                                            fontWeight: FontWeight.bold,
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                          )
-                                        : null,
-                                  ),
-                                )
-                                .toList(),
-                          ),
-                        ),
+      () {
+        final suggestions = _searchController.searchSuggestList;
+        final hasSuggestions =
+            suggestions.isNotEmpty &&
+            suggestions.first.term != null &&
+            _searchController.currentKeyword.isNotEmpty;
+        if (!hasSuggestions) {
+          return const SizedBox.shrink();
+        }
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: suggestions
+              .map(
+                (item) => InkWell(
+                  borderRadius: const BorderRadius.all(Radius.circular(4)),
+                  onTap: () => _searchController.onClickKeyword(item.term!),
+                  child: Padding(
+                    padding: const EdgeInsets.only(
+                      left: 20,
+                      top: 9,
+                      bottom: 9,
+                    ),
+                    child: Text.rich(
+                      TextSpan(
+                        children: Em.regTitle(item.textRich)
+                            .map(
+                              (e) => TextSpan(
+                                text: e.text,
+                                style: e.isEm
+                                    ? TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: Theme.of(
+                                          context,
+                                        ).colorScheme.primary,
+                                      )
+                                    : null,
+                              ),
+                            )
+                            .toList(),
                       ),
                     ),
-                  )
-                  .toList(),
-            )
-          : const SizedBox.shrink(),
+                  ),
+                ),
+              )
+              .toList(),
+        );
+      },
     );
   }
 
@@ -211,7 +221,7 @@ class _SearchPageState extends State<SearchPage> {
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       )
                     : text,
                 SizedBox(
@@ -259,7 +269,8 @@ class _SearchPageState extends State<SearchPage> {
   Widget _history(ThemeData theme, bool isPortrait) {
     return Obx(
       () {
-        if (_searchController.historyList.isEmpty) {
+        final history = _searchController.historyList.toList(growable: false);
+        if (history.isEmpty) {
           return const SizedBox.shrink();
         }
         final secondary = theme.colorScheme.secondary;
@@ -306,20 +317,13 @@ class _SearchPageState extends State<SearchPage> {
                             style: IconButton.styleFrom(
                               padding: EdgeInsets.zero,
                             ),
-                            onPressed: () {
-                              enable = !enable;
-                              _searchController.recordSearchHistory.value =
-                                  enable;
-                              GStorage.setting.put(
-                                SettingBoxKey.recordSearchHistory,
-                                enable,
-                              );
-                            },
+                            onPressed:
+                                _searchController.toggleRecordSearchHistory,
                           ),
                         );
                       },
                     ),
-                    _exportHsitory(theme),
+                    _exportHistory(theme),
                     const Spacer(),
                     SizedBox(
                       height: 34,
@@ -352,7 +356,7 @@ class _SearchPageState extends State<SearchPage> {
                 runSpacing: 8,
                 direction: Axis.horizontal,
                 textDirection: TextDirection.ltr,
-                children: _searchController.historyList
+                children: history
                     .map(
                       (item) => SearchText(
                         text: item,
@@ -369,7 +373,7 @@ class _SearchPageState extends State<SearchPage> {
     );
   }
 
-  Widget _exportHsitory(ThemeData theme) => SizedBox(
+  Widget _exportHistory(ThemeData theme) => SizedBox(
     width: 34,
     height: 34,
     child: IconButton(
@@ -387,8 +391,7 @@ class _SearchPageState extends State<SearchPage> {
         fromJson: (json) {
           try {
             final list = List<String>.from(json);
-            _searchController.historyList.value = list;
-            GStorage.historyWord.put('cacheList', list);
+            _searchController.replaceHistory(list);
             return true;
           } catch (e) {
             SmartDialog.showToast(e.toString());

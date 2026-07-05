@@ -1241,6 +1241,22 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
     );
     final isFullScreen = this.isFullScreen;
     final isLive = plPlayerController.isLive;
+    final Widget gestureLayer = GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onVerticalDragStart: onVerticalDragStart,
+      onVerticalDragUpdate: onVerticalDragUpdate,
+      onVerticalDragEnd: onVerticalDragEnd,
+      onTap: () =>
+          plPlayerController.controls = !plPlayerController.showControls.value,
+      onDoubleTapDown: onDoubleTapDown,
+      onDoubleTap: () {},
+      onLongPressStart: isLive
+          ? null
+          : (_) => plPlayerController.setLongPressStatus(true),
+      onLongPressEnd: isLive
+          ? null
+          : (_) => plPlayerController.setLongPressStatus(false),
+    );
 
     Widget buildContent() => Stack(
       fit: StackFit.passthrough,
@@ -1275,18 +1291,7 @@ class _PLVideoPlayerState extends State<PLVideoPlayer>
               onInteractionEnd: _onInteractionEnd,
               flipX: plPlayerController.flipX.value,
               flipY: plPlayerController.flipY.value,
-              onVerticalDragStart: onVerticalDragStart,
-              onVerticalDragUpdate: onVerticalDragUpdate,
-              onVerticalDragEnd: onVerticalDragEnd,
-              onTap: () => plPlayerController.controls =
-                  !plPlayerController.showControls.value,
-              onDoubleTapDown: onDoubleTapDown,
-              onLongPressStart: isLive
-                  ? null
-                  : (_) => plPlayerController.setLongPressStatus(true),
-              onLongPressEnd: isLive
-                  ? null
-                  : (_) => plPlayerController.setLongPressStatus(false),
+              gestureWidget: gestureLayer,
               enableDragSubtitle: plPlayerController.enableDragSubtitle,
               onUpdatePadding: plPlayerController.onUpdatePadding,
             );

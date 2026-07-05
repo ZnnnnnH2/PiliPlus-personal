@@ -191,6 +191,9 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
   void _onPlay(String liveUrl) {
     _player ??= Player();
     _videoController ??= VideoController(_player!);
+    if (mounted) {
+      setState(() {});
+    }
     _player!.open(Media(liveUrl));
   }
 
@@ -427,7 +430,7 @@ class _InteractiveviewerGalleryState extends State<InteractiveviewerGallery>
             },
           ),
           SourceType.livePhoto => Obx(
-            () => currentIndex.value == index
+            () => currentIndex.value == index && _videoController != null
                 ? IgnorePointer(
                     child: Video(
                       controller: _videoController!,

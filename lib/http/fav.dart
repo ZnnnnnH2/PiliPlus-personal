@@ -2,6 +2,7 @@ import 'package:PiliPlus/common/constants.dart';
 import 'package:PiliPlus/http/api.dart';
 import 'package:PiliPlus/http/init.dart';
 import 'package:PiliPlus/http/loading_state.dart';
+import 'package:PiliPlus/http/response_utils.dart';
 import 'package:PiliPlus/models/common/fav_order_type.dart';
 import 'package:PiliPlus/models_new/fav/fav_article/data.dart';
 import 'package:PiliPlus/models_new/fav/fav_detail/data.dart';
@@ -18,7 +19,7 @@ import 'package:PiliPlus/utils/app_sign.dart';
 import 'package:dio/dio.dart';
 
 class FavHttp {
-  static Future favFavFolder(mediaId) async {
+  static Future<Map<String, dynamic>> favFavFolder(Object? mediaId) async {
     var res = await Request().post(
       Api.favFavFolder,
       data: {
@@ -27,14 +28,13 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return const {'status': true, 'msg': '收藏成功'};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      successMessage: (_) => '收藏成功',
+    );
   }
 
-  static Future unfavFavFolder(mediaId) async {
+  static Future<Map<String, dynamic>> unfavFavFolder(Object? mediaId) async {
     var res = await Request().post(
       Api.unfavFavFolder,
       data: {
@@ -43,11 +43,10 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return const {'status': true, 'msg': '取消收藏成功'};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(
+      asJsonMap(res.data),
+      successMessage: (_) => '取消收藏成功',
+    );
   }
 
   static Future<LoadingState<FavDetailData>> userFavFolderDetail({
@@ -99,7 +98,10 @@ class FavHttp {
   }
 
   // 取消订阅
-  static Future cancelSub({required int id, required int type}) async {
+  static Future<Map<String, dynamic>> cancelSub({
+    required int id,
+    required int type,
+  }) async {
     var res = type == 11
         ? await Request().post(
             Api.unfavFolder,
@@ -118,11 +120,7 @@ class FavHttp {
             },
             options: Options(contentType: Headers.formUrlEncodedContentType),
           );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState<SubDetailData>> favSeasonList({
@@ -165,7 +163,7 @@ class FavHttp {
     }
   }
 
-  static Future addFavPugv(seasonId) async {
+  static Future<Map<String, dynamic>> addFavPugv(Object? seasonId) async {
     var res = await Request().post(
       Api.addFavPugv,
       data: {
@@ -174,14 +172,10 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future delFavPugv(seasonId) async {
+  static Future<Map<String, dynamic>> delFavPugv(Object? seasonId) async {
     var res = await Request().post(
       Api.delFavPugv,
       data: {
@@ -190,11 +184,7 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState<FavTopicData>> favTopic({
@@ -215,7 +205,7 @@ class FavHttp {
     }
   }
 
-  static Future addFavTopic(topicId) async {
+  static Future<Map<String, dynamic>> addFavTopic(Object? topicId) async {
     var res = await Request().post(
       Api.addFavTopic,
       data: {
@@ -231,7 +221,7 @@ class FavHttp {
     }
   }
 
-  static Future delFavTopic(topicId) async {
+  static Future<Map<String, dynamic>> delFavTopic(Object? topicId) async {
     var res = await Request().post(
       Api.delFavTopic,
       data: {
@@ -247,7 +237,10 @@ class FavHttp {
     }
   }
 
-  static Future likeTopic(topicId, bool isLike) async {
+  static Future<Map<String, dynamic>> likeTopic(
+    Object? topicId,
+    bool isLike,
+  ) async {
     var res = await Request().post(
       Api.likeTopic,
       data: {
@@ -283,8 +276,8 @@ class FavHttp {
     }
   }
 
-  static Future addFavArticle({
-    required dynamic id,
+  static Future<Map<String, dynamic>> addFavArticle({
+    required Object? id,
   }) async {
     var res = await Request().post(
       Api.addFavArticle,
@@ -296,15 +289,11 @@ class FavHttp {
         contentType: Headers.formUrlEncodedContentType,
       ),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
-  static Future delFavArticle({
-    required dynamic id,
+  static Future<Map<String, dynamic>> delFavArticle({
+    required Object? id,
   }) async {
     var res = await Request().post(
       Api.delFavArticle,
@@ -316,11 +305,7 @@ class FavHttp {
         contentType: Headers.formUrlEncodedContentType,
       ),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState<List<FavNoteItemModel>?>> userNoteList({
@@ -365,7 +350,7 @@ class FavHttp {
     }
   }
 
-  static Future delNote({
+  static Future<Map<String, dynamic>> delNote({
     required bool isPublish,
     required String noteIds,
   }) async {
@@ -379,15 +364,11 @@ class FavHttp {
         contentType: Headers.formUrlEncodedContentType,
       ),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState<FavPgcData>> favPgc({
-    required dynamic mid,
+    required Object? mid,
     required int type,
     required int pn,
     int? followStatus,
@@ -412,7 +393,7 @@ class FavHttp {
   static Future<LoadingState<FavFolderData>> userfavFolder({
     required int pn,
     required int ps,
-    required dynamic mid,
+    required Object? mid,
   }) async {
     var res = await Request().get(
       Api.userFavFolder,
@@ -429,7 +410,7 @@ class FavHttp {
     }
   }
 
-  static Future sortFavFolder({
+  static Future<Map<String, dynamic>> sortFavFolder({
     required String sort,
   }) async {
     Map<String, dynamic> data = {
@@ -451,8 +432,8 @@ class FavHttp {
     }
   }
 
-  static Future sortFav({
-    required dynamic mediaId,
+  static Future<Map<String, dynamic>> sortFav({
+    required Object? mediaId,
     required String sort,
   }) async {
     Map<String, dynamic> data = {
@@ -475,8 +456,8 @@ class FavHttp {
     }
   }
 
-  static Future cleanFav({
-    required dynamic mediaId,
+  static Future<Map<String, dynamic>> cleanFav({
+    required Object? mediaId,
   }) async {
     var res = await Request().post(
       Api.cleanFav,
@@ -496,7 +477,7 @@ class FavHttp {
     }
   }
 
-  static Future deleteFolder({
+  static Future<Map<String, dynamic>> deleteFolder({
     required String mediaIds,
   }) async {
     var res = await Request().post(
@@ -517,9 +498,9 @@ class FavHttp {
     }
   }
 
-  static Future addOrEditFolder({
+  static Future<Map<String, dynamic>> addOrEditFolder({
     required bool isAdd,
-    dynamic mediaId,
+    Object? mediaId,
     required String title,
     required int privacy,
     required String cover,
@@ -546,8 +527,8 @@ class FavHttp {
     }
   }
 
-  static Future favFolderInfo({
-    dynamic mediaId,
+  static Future<Map<String, dynamic>> favFolderInfo({
+    Object? mediaId,
   }) async {
     var res = await Request().get(
       Api.favFolderInfo,
@@ -562,9 +543,9 @@ class FavHttp {
     }
   }
 
-  static Future seasonFav({
+  static Future<Map<String, dynamic>> seasonFav({
     required bool isFav,
-    required dynamic seasonId,
+    required Object? seasonId,
   }) async {
     var res = await Request().post(
       isFav ? Api.unfavSeason : Api.favSeason,
@@ -624,9 +605,9 @@ class FavHttp {
     }
   }
 
-  static Future communityAction({
-    required dynamic opusId,
-    required dynamic action,
+  static Future<Map<String, dynamic>> communityAction({
+    required Object? opusId,
+    required int action,
   }) async {
     var res = await Request().post(
       Api.communityAction,
@@ -649,7 +630,7 @@ class FavHttp {
   }
 
   // （取消）收藏
-  static Future favVideo({
+  static Future<Map<String, dynamic>> favVideo({
     required String resources,
     String? addIds,
     String? delIds,
@@ -664,17 +645,13 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   // （取消）收藏
-  static Future unfavAll({
-    required rid,
-    required type,
+  static Future<Map<String, dynamic>> unfavAll({
+    required Object? rid,
+    required Object? type,
   }) async {
     var res = await Request().post(
       Api.unfavAll,
@@ -685,19 +662,15 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return {'status': true, 'data': res.data['data']};
-    } else {
-      return {'status': false, 'msg': res.data['message']};
-    }
+    return statusResultFromJsonData(asJsonMap(res.data));
   }
 
   static Future<LoadingState> copyOrMoveFav({
     required bool isCopy,
     required bool isFav,
-    required dynamic srcMediaId,
-    required dynamic tarMediaId,
-    dynamic mid,
+    required Object? srcMediaId,
+    required Object? tarMediaId,
+    Object? mid,
     required String resources,
   }) async {
     var res = await Request().post(
@@ -718,11 +691,10 @@ class FavHttp {
       },
       options: Options(contentType: Headers.formUrlEncodedContentType),
     );
-    if (res.data['code'] == 0) {
-      return const Success(null);
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (_) => null,
+    );
   }
 
   static Future<LoadingState<FavFolderData>> allFavFolders(Object mid) async {
@@ -730,31 +702,29 @@ class FavHttp {
       Api.favFolder,
       queryParameters: {'up_mid': mid},
     );
-    if (res.data['code'] == 0) {
-      return Success(FavFolderData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => FavFolderData.fromJson(data),
+    );
   }
 
   // 查看视频被收藏在哪个文件夹
   static Future<LoadingState<FavFolderData>> videoInFolder({
-    dynamic mid,
-    dynamic rid,
-    dynamic type,
+    Object? mid,
+    Object? rid,
+    Object? type,
   }) async {
     var res = await Request().get(
       Api.favFolder,
       queryParameters: {
         'up_mid': mid,
         'rid': rid,
-        'type': ?type,
+        'type': type,
       },
     );
-    if (res.data['code'] == 0) {
-      return Success(FavFolderData.fromJson(res.data['data']));
-    } else {
-      return Error(res.data['message']);
-    }
+    return loadingStateFromJsonData(
+      asJsonMap(res.data),
+      parser: (data) => FavFolderData.fromJson(data),
+    );
   }
 }
